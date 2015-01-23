@@ -10,6 +10,9 @@ public class Driver {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws ParseException, IOException {
+		long start = System.currentTimeMillis();
+		System.out.printf("TOTAL EXECUTION TIME: %d seconds\n", start);
+		
 		String inputDirectory = null;
 		
 		// Check how many arguments were passed in
@@ -49,6 +52,10 @@ public class Driver {
 		System.out.printf("               %f months\n", (r.maxTime - r.minTime)/(3600*24*30));
 		System.out.printf("               %f years\n", (r.maxTime - r.minTime)/(3600*24*30*12));
 		System.out.println("====================================================");
+		long duration = (System.currentTimeMillis() - start)/1000;
+		System.out.printf("TOTAL EXECUTION TIME: %d seconds\n", duration);
+		System.out.printf("                      %d minutes\n", duration/60);
+		System.out.printf("                      %d hours\n", duration/3600);
 	}
 
 }

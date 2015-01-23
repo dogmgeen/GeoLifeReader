@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class GeoLifeRecord {
 	public double x;
@@ -12,7 +11,7 @@ public class GeoLifeRecord {
 	public int t;
 	
 	private final DateFormat fmt = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss");
-	private final Pattern SKIP_UNUSED_TOKENS = Pattern.compile(",0,-?\\d+,\\d+(\\.\\d+)?");
+	//private final Pattern SKIP_UNUSED_TOKENS = Pattern.compile(",0,-?\\d+,\\d+(\\.\\d+)?");
 
 	@SuppressWarnings("resource")
 	public GeoLifeRecord(String s) throws ParseException {
