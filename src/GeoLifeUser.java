@@ -56,6 +56,19 @@ public class GeoLifeUser  extends GeoLifeEntity {
 		for (String f: files) {
 			pltFiles.add(new GeoLifeFile(dataFilesDirectory.resolve(f).toUri()));
 		}
+		
+		// Assert the files are in ascending order.
+		long previous = Long.MIN_VALUE;
+		long current;
+		String current_filename;
+		for (GeoLifeFile f: pltFiles) {
+			current_filename = f.getName();
+			current = Long.parseLong(current_filename.substring(0, current_filename.indexOf("."))); 
+			System.out.printf("%d compared to %d\n", previous, current);
+			
+			assert previous <= current: "Previous file did not occur before current file";
+			previous = current;
+		}
 	}
 	
 	public void performAnalysis() throws FileNotFoundException, ParseException {
