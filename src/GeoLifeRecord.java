@@ -38,7 +38,7 @@ public class GeoLifeRecord {
 			
 			// Extract time as seconds since 1970.
 			t = (int) (fmt.parse(date + " " + time).getTime()/1000L);
-		} catch (Exception e) {
+		} catch (ParseException e) {
 			System.out.println("#################################################");
 			System.out.printf("Critical error parsing %s\n", s);
 			System.out.println("#################################################");
