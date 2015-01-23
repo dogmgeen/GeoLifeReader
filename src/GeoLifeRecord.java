@@ -11,7 +11,6 @@ public class GeoLifeRecord {
 	public double y;
 	public int t;
 	
-	private static final int DECIMAL_DEGREE_TO_METERS = 78710;
 	private final DateFormat fmt = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss");
 	private final Pattern SKIP_UNUSED_TOKENS = Pattern.compile(",0,-?\\d+,\\d+(\\.\\d+)?");
 
@@ -24,8 +23,8 @@ public class GeoLifeRecord {
 			lineScan.useDelimiter(",");
 			
 			// Convert GPS latlong to meters.
-			x = lineScan.nextDouble()*DECIMAL_DEGREE_TO_METERS;
-			y = lineScan.nextDouble()*DECIMAL_DEGREE_TO_METERS;
+			x = lineScan.nextDouble();
+			y = lineScan.nextDouble();
 			
 			// skip unused third parameter, altitude, and days since 1900
 			//lineScan.skip(SKIP_UNUSED_TOKENS);
@@ -40,7 +39,7 @@ public class GeoLifeRecord {
 			t = (int) (fmt.parse(date + " " + time).getTime()/1000L);
 		} catch (ParseException e) {
 			System.out.println("#################################################");
-			System.out.printf("Critical error parsing %s\n", s);
+			System.out.printf( "Critical error parsing %s\n", s);
 			System.out.println("#################################################");
 			throw e;
 		}
