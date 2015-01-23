@@ -5,17 +5,11 @@ import java.text.ParseException;
 import java.util.Scanner;
 
 
-public class GeoLifeFile extends File {
-	private static final long serialVersionUID = -2267796368162097230L;
-	public double minX;
-	public double minY;
-	public double maxX;
-	public double maxY;
-	public int maxTime;
-	public int minTime;
+public class GeoLifeFile extends GeoLifeEntity {
+	private File f;
 
 	public GeoLifeFile(URI uri) {
-		super(uri);
+		f = new File(uri);
 		
 		minX = minY = Double.MAX_VALUE;	// All values are smaller than Double.MAX_VALUE.
 		maxX = maxY = Double.MIN_VALUE; // All values are bigger than Double.MIN_VALUE.
@@ -23,9 +17,10 @@ public class GeoLifeFile extends File {
 		maxTime = Integer.MIN_VALUE;
 	}
 
-	public void analyzeFile() throws FileNotFoundException, ParseException {
+	@Override
+	public void performAnalysis() throws FileNotFoundException, ParseException {
 		// create a reader for the first file.
-		Scanner s = new Scanner(this.getAbsoluteFile());
+		Scanner s = new Scanner(f.getAbsoluteFile());
 		s.nextLine();						//Geolife trajectory
 		s.nextLine();						//WGS 84
 		s.nextLine();						//Altitude is in Feet
@@ -47,19 +42,17 @@ public class GeoLifeFile extends File {
 			maxTime = Math.max(record.t, maxTime);
 		}
 		
-		System.out.printf("Min point: (%f, %f)\n", minX, minY);
-		System.out.printf("Max point: (%f, %f)\n", maxX, maxY);
-		System.out.printf("Map dimensions (meters): (%f, %f)\n", (maxX-minX), (maxY-minY));
-		System.out.printf("Min time: %d seconds\n", minTime);
-		System.out.printf("Max time: %d seconds\n", maxTime);
-		System.out.printf("Time duration: %d seconds\n", maxTime-minTime);
-		System.out.printf("               %d hours\n", (maxTime-minTime)/(3600));
-		System.out.printf("               %d days\n", (maxTime-minTime)/(3600*24));
-		System.out.printf("               %d months\n", (maxTime-minTime)/(3600*24*30));
-		System.out.printf("               %d years\n", (maxTime-minTime)/(3600*24*30*12));
-		System.out.println("====================================================");
-		
+		printSummary();
 		s.close();
+		
+	}
+
+	public String getName() {
+		return f.getName();
+	}
+
+	public File getFile() {
+		return f;
 	}
 
 }

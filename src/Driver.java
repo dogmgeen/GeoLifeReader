@@ -36,22 +36,8 @@ public class Driver {
 		}
 		
 		r.performAnalysis();
+		r.printSummary();
 		
-		System.out.println("######################################################");
-		System.out.println("Reader: Finished determining min-max data");
-		
-		System.out.println("Statistics for GeoLife simulation");
-		System.out.printf("Min point: (%f, %f)\n", r.minX, r.minY);
-		System.out.printf("Max point: (%f, %f)\n", r.maxX, r.maxY);
-		System.out.printf("Map dimensions (meters): (%f, %f)\n", (r.maxX - r.minX), (r.maxY - r.minY));
-		System.out.printf("Min time: %f seconds\n", r.minTime);
-		System.out.printf("Max time: %f seconds\n", r.maxTime);
-		System.out.printf("Time duration: %f seconds\n", r.maxTime - r.minTime);
-		System.out.printf("               %f hours\n", (r.maxTime - r.minTime)/(3600));
-		System.out.printf("               %f days\n", (r.maxTime - r.minTime)/(3600*24));
-		System.out.printf("               %f months\n", (r.maxTime - r.minTime)/(3600*24*30));
-		System.out.printf("               %f years\n", (r.maxTime - r.minTime)/(3600*24*30*12));
-		System.out.println("====================================================");
 		long duration = (System.currentTimeMillis() - start)/1000;
 		System.out.printf("TOTAL EXECUTION TIME: %d seconds\n", duration);
 		System.out.printf("                      %d minutes\n", duration/60);

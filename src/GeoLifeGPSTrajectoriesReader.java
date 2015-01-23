@@ -11,15 +11,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class GeoLifeGPSTrajectoriesReader {
+public class GeoLifeGPSTrajectoriesReader extends GeoLifeEntity {
 	/** external directory containing GeoLife PLT files -setting id ({@value})*/
 	Map<String, GeoLifeUser> users;
-	public double maxX;
-	public double maxY;
-	public double minX;
-	public double minY;
-	public double minTime;
-	public double maxTime;
 
 	public GeoLifeGPSTrajectoriesReader(String directory) throws IOException, ParseException {
 		
@@ -71,32 +65,7 @@ public class GeoLifeGPSTrajectoriesReader {
         	System.out.println("User " + u.getID());
         	u.performAnalysis();
         	
-        	// 4. For each user, associate a list of plt file URIs, sorted by time.
-    		// 5. For each user, create a reader for the first file.
-    		// 6. For each user, assign:
-        	
-    		//  localMaxX: iterate through all files (ugh... need some preprocessing)
-    		//  maxX: max over all users
-        	maxX = Math.max(u.getMaxX(), maxX);
-        	
-        	//  localMinX: iterate through all files (^)
-    		//  minX: min over all users
-        	minX = Math.min(u.getMinX(), minX);
-
-        	//  localMaxY: iterate through all files (^)
-    		//  maxY: max over all users
-        	maxY = Math.max(u.getMaxY(), maxY);
-        	
-        	//  localMinY: iterate through all files (^)
-        	//	minY: max over all users
-        	minY = Math.min(u.getMinY(), minY);
-        	
-    		//  maxTime: max of all localMaxTimes
-        	maxTime = Math.max(u.getMaxTime(), maxTime);
-        	
-    		//  localMinTime: First line of first plt file
-    		//  minTime: min of all localMinTimes
-        	minTime = Math.min(u.getMinTime(), minTime);
+        	updateMinMaxData(u);
         }
 	}
 }
