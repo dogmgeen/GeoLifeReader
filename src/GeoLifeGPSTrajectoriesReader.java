@@ -16,6 +16,7 @@ public class GeoLifeGPSTrajectoriesReader extends GeoLifeEntity {
 	Map<String, GeoLifeUser> users;
 
 	public GeoLifeGPSTrajectoriesReader(String directory) throws IOException, ParseException {
+		super();
 		
 		// Search GeoLife files for initial locations of participating nodes
 		Path directoryUrl = Paths.get(directory);
@@ -47,13 +48,6 @@ public class GeoLifeGPSTrajectoriesReader extends GeoLifeEntity {
         	GeoLifeUser u = new GeoLifeUser(pathToAllFiles, userID);
         	users.put(u.getID(), u);
         }
-        
-        maxX = Double.MIN_VALUE;
-		maxY = Double.MIN_VALUE;
-		minX = Double.MAX_VALUE;
-		minY = Double.MAX_VALUE;
-		minTime = Double.MAX_VALUE;
-		maxTime = Double.MIN_VALUE;
 		
 		System.out.println("User enumeration complete");
 		System.out.println("=========================");
@@ -67,5 +61,14 @@ public class GeoLifeGPSTrajectoriesReader extends GeoLifeEntity {
         	
         	updateMinMaxData(u);
         }
+	}
+
+	@Override
+	public Histogram getTimeDeltaHistogram() {
+		for(Entry<String, GeoLifeUser> userEntry: users.entrySet()){
+			GeoLifeUser u = userEntry.getValue();
+			timeDeltaHistogram.update(u.getTimeDeltaHistogram());
+        }
+		return timeDeltaHistogram;
 	}
 }

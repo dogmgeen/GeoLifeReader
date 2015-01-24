@@ -9,8 +9,19 @@ public abstract class GeoLifeEntity {
 	protected double minY;
 	protected double minTime;
 	protected double maxTime;
+	protected Histogram timeDeltaHistogram;
 	
 	public abstract void performAnalysis() throws FileNotFoundException, ParseException;
+	public abstract Histogram getTimeDeltaHistogram();
+	
+	public GeoLifeEntity() {
+		minX = minY = Double.MAX_VALUE;	// All values are smaller than Double.MAX_VALUE.
+		maxX = maxY = Double.MIN_VALUE; // All values are bigger than Double.MIN_VALUE.
+		minTime = Integer.MAX_VALUE;
+		maxTime = Integer.MIN_VALUE;
+		
+		timeDeltaHistogram = new Histogram();
+	}
 	
 	public void printSummary() {
 		System.out.printf("Min point: (%f, %f)\n", minX, minY);

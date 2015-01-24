@@ -38,6 +38,9 @@ public class Driver {
 		r.performAnalysis();
 		r.printSummary();
 		
+		Histogram h = r.getTimeDeltaHistogram();
+		h.writeToFile("time_deltas.csv");
+		
 		long duration = (System.currentTimeMillis() - start)/1000;
 		System.out.printf("TOTAL EXECUTION TIME: %d seconds\n", duration);
 		System.out.printf("                      %d minutes\n", duration/60);

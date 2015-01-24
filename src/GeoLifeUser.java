@@ -17,13 +17,9 @@ public class GeoLifeUser  extends GeoLifeEntity {
 	private Scanner plt_scanner;
 	
 	public GeoLifeUser(Path root, String userID) throws FileNotFoundException, ParseException {
+		super();
 		this.userID = userID;
 		initPltFiles(root);
-
-		minX = minY = Double.MAX_VALUE;	// All values are smaller than Double.MAX_VALUE.
-		maxX = maxY = Double.MIN_VALUE; // All values are bigger than Double.MIN_VALUE.
-		minTime = Integer.MAX_VALUE;
-		maxTime = Integer.MIN_VALUE;	
 	}
 	
 	private void initPltFiles(Path root) {
@@ -122,5 +118,13 @@ public class GeoLifeUser  extends GeoLifeEntity {
 		// At this point, there either is another file, or there are more
 		//  tokens in the current file.
 		return true;
+	}
+
+	@Override
+	public Histogram getTimeDeltaHistogram() {
+		for (GeoLifeFile f: pltFiles) {
+			timeDeltaHistogram.update(f.getTimeDeltaHistogram());
+		}
+		return timeDeltaHistogram;
 	}
 }
