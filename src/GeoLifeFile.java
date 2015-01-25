@@ -7,10 +7,14 @@ import java.util.Scanner;
 
 public class GeoLifeFile extends GeoLifeEntity {
 	private File f;
+  private GeoLifeRecord first;
+  private GeoLifeRecord last;
 
 	public GeoLifeFile(URI uri) {
 		super();
 		f = new File(uri);
+    first = null;
+    last = null;
 	}
 
 	@Override
@@ -29,6 +33,10 @@ public class GeoLifeFile extends GeoLifeEntity {
 		while (s.hasNext()) {
 			//39.984702,116.318417,0,492,39744.1201851852,2008-10-23,02:53:04
 			record = new GeoLifeRecord(s.nextLine());
+
+      if (first == null) {
+        first = record;
+      }
 			
 			if (last_time != null) {
 				timeDeltaHistogram.increment(record.t - last_time);
@@ -42,10 +50,11 @@ public class GeoLifeFile extends GeoLifeEntity {
 			maxTime = Math.max(record.t, maxTime);
 			last_time = record.t;
 		}
+
+    last = record;
 		
 		printSummary();
 		s.close();
-		
 	}
 
 	public String getName() {
@@ -60,5 +69,13 @@ public class GeoLifeFile extends GeoLifeEntity {
 	public Histogram getTimeDeltaHistogram() {
 		return timeDeltaHistogram;
 	}
+
+  public GeoLifeRecord getFirstRecord() {
+    return first;
+  }
+
+  public GeoLifeRecord getLastRecord() {
+    return last;
+  }
 
 }

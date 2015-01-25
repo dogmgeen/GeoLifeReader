@@ -68,10 +68,19 @@ public class GeoLifeUser  extends GeoLifeEntity {
 	}
 	
 	public void performAnalysis() throws FileNotFoundException, ParseException {
+    GeoLifeFile previousFile = null;
 		for (GeoLifeFile f: pltFiles) {
 			System.out.println("User " + userID + " file " + f.getName());
 			f.performAnalysis();
 			updateMinMaxData(f);
+
+      if (previousFile != null) {
+        timeDeltaHistogram.increment(
+          f.getLastRecord().t - previousFile.getFirstRecord().t
+        );
+      }
+
+      previousFile = f;
 		}
 		
 		System.out.println("Statistics for GeoLife user " + userID);
