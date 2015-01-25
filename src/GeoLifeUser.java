@@ -69,15 +69,22 @@ public class GeoLifeUser  extends GeoLifeEntity {
 	
 	public void performAnalysis() throws FileNotFoundException, ParseException {
     GeoLifeFile previousFile = null;
+    int timeDelta = 0;
 		for (GeoLifeFile f: pltFiles) {
 			System.out.println("User " + userID + " file " + f.getName());
 			f.performAnalysis();
 			updateMinMaxData(f);
 
       if (previousFile != null) {
-        timeDeltaHistogram.increment(
-          f.getLastRecord().t - previousFile.getFirstRecord().t
-        );
+        timeDelta = f.getLastRecord().t - previousFile.getFirstRecord().t;
+        timeDeltaHistogram.increment(timeDelta);
+
+        if (timeDelta < 1) {
+          System.out.printf(
+            "Non-positive time delta between files %s and %s (%d seconds)\n",
+            previousFile.getName(), f.getName(), timeDelta
+          );
+        }
       }
 
       previousFile = f;

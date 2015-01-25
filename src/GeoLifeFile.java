@@ -30,16 +30,28 @@ public class GeoLifeFile extends GeoLifeEntity {
 		
 		GeoLifeRecord record = null;
 		Integer last_time = null;
+    int timeDelta = 0;
+    String line = null;
 		while (s.hasNext()) {
 			//39.984702,116.318417,0,492,39744.1201851852,2008-10-23,02:53:04
-			record = new GeoLifeRecord(s.nextLine());
+      line = s.nextLine();
+			record = new GeoLifeRecord(line);
 
       if (first == null) {
         first = record;
       }
 			
 			if (last_time != null) {
-				timeDeltaHistogram.increment(record.t - last_time);
+        timeDelta = record.t - last_time;
+				timeDeltaHistogram.increment(timeDelta);
+        if (timeDelta < 1 || timeDelta > 5933) {
+          System.out.printf(
+            "Odd time delta in file %s (%d seconds)\n",
+            getName(), timeDelta
+          );
+          System.out.println(line);
+        }
+
 			}
 			
 			minX = Math.min(record.x, minX);
