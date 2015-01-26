@@ -38,12 +38,12 @@ public abstract class GeoLifeEntity {
 	}
 	
 	protected void updateMinMaxData(GeoLifeEntity u) {
-		maxX = Math.max(u.getMaxX(), maxX);
-    	minX = Math.min(u.getMinX(), minX);
-    	maxY = Math.max(u.getMaxY(), maxY);
-    	minY = Math.min(u.getMinY(), minY);
-    	maxTime = Math.max(u.getMaxTime(), maxTime);
-    	minTime = Math.min(u.getMinTime(), minTime);
+    maxX = Math.max(u.getMaxX(), maxX);
+    minX = Math.min(u.getMinX(), minX);
+    maxY = Math.max(u.getMaxY(), maxY);
+    minY = Math.min(u.getMinY(), minY);
+    maxTime = Math.max(u.getMaxTime(), maxTime);
+    minTime = Math.min(u.getMinTime(), minTime);
 	}
 	
 	public double getMaxX() {

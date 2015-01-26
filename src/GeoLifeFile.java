@@ -44,7 +44,7 @@ public class GeoLifeFile extends GeoLifeEntity {
 			if (last_time != null) {
         timeDelta = record.t - last_time;
 				timeDeltaHistogram.increment(timeDelta);
-        if (timeDelta < 1 || timeDelta > 5933) {
+        if (timeDelta < 0 || timeDelta > 5933) {
           System.out.printf(
             "Odd time delta in file %s (%d seconds)\n",
             getName(), timeDelta
@@ -65,7 +65,7 @@ public class GeoLifeFile extends GeoLifeEntity {
 
     last = record;
 		
-		printSummary();
+		//printSummary();
 		s.close();
 	}
 

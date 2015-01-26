@@ -60,7 +60,7 @@ public class GeoLifeUser  extends GeoLifeEntity {
 		for (GeoLifeFile f: pltFiles) {
 			current_filename = f.getName();
 			current = Long.parseLong(current_filename.substring(0, current_filename.indexOf("."))); 
-			System.out.printf("%d compared to %d\n", previous, current);
+			//System.out.printf("%d compared to %d\n", previous, current);
 			
 			assert previous <= current: "Previous file did not occur before current file";
 			previous = current;
@@ -71,7 +71,7 @@ public class GeoLifeUser  extends GeoLifeEntity {
     GeoLifeFile previousFile = null;
     int timeDelta = 0;
 		for (GeoLifeFile f: pltFiles) {
-			System.out.println("User " + userID + " file " + f.getName());
+			//System.out.println("User " + userID + " file " + f.getName());
 			f.performAnalysis();
 			updateMinMaxData(f);
 
@@ -79,7 +79,7 @@ public class GeoLifeUser  extends GeoLifeEntity {
         timeDelta = f.getLastRecord().t - previousFile.getFirstRecord().t;
         timeDeltaHistogram.increment(timeDelta);
 
-        if (timeDelta < 1) {
+        if (timeDelta < 0) {
           System.out.printf(
             "Non-positive time delta between files %s and %s (%d seconds)\n",
             previousFile.getName(), f.getName(), timeDelta
@@ -90,8 +90,8 @@ public class GeoLifeUser  extends GeoLifeEntity {
       previousFile = f;
 		}
 		
-		System.out.println("Statistics for GeoLife user " + userID);
-		printSummary();
+		//System.out.println("Statistics for GeoLife user " + userID);
+		//printSummary();
 	}
 
 	public String getID() {
@@ -103,7 +103,7 @@ public class GeoLifeUser  extends GeoLifeEntity {
 			plt_scanner.close();
 			
 			GeoLifeFile f = pltFiles.remove(0);
-			System.out.printf("Opening new file: " + f.getName());
+			//System.out.printf("Opening new file: " + f.getName());
 			plt_scanner = new Scanner(f.getFile());
 			
 			// Skip over first six lines.
