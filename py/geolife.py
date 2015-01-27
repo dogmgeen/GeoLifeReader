@@ -1,14 +1,6 @@
 import sys
 import os 
 
-"""
-g = GeoLifeDataset(directory="/path/containing/raw/plt/files")
-g.retrieveByDate(date="")\
- .boundByLocation(top="", right="", bottom="", left="")\
- .homogenizeTimeDeltas(time_delta="")\
- .convertToONE(to_file="")\
-"""
-
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
 
@@ -46,9 +38,13 @@ class GeoLifeDataset:
     #  hash created by the directory.
     import hashlib
     directory_hash = hashlib.md5(directory).hexdigest()
+
+    db_name = "{0}.db".format(directory_hash)
+    db_exists = os.path.isfile(db_name)
+
     from sqlalchemy import create_engine
     engine = create_engine(
-      'sqlite:///{0}.db'.format(directory_hash), echo=True
+      'sqlite:///{0}'.format(db_name), echo=True
     )
 
     from sqlalchemy.orm import sessionmaker
@@ -56,23 +52,27 @@ class GeoLifeDataset:
     Session.configure(bind=engine)
     session = Session()
 
-    from sqlalchemy.engine.reflection import Inspector
-    inspector = Inspector.from_engine(engine)
-    import record
-    if not record.TABLE_NAME in inspector.get_table_names():
-      print("'{0}' does not exist in {1}.db".format(
-        record.TABLE_NAME, directory_hash
+    if not db_exists:
+      print("-"*50)
+      print("Database does not pre-exist at {0}!".format(db_name))
+      print("Database will be created and populated from files in {0}".format(
+        directory
       ))
-      print("'{0}' will be created and populated from files in {1}".format(
-        record.TABLE_NAME, directory
-      ))
+      import record
       record.initialize_table(engine)
-      record.load_from_directory(directory, session)
+      
+      for r in load_from_directory(directory):
+        print(r)
+      print("-"*50)
+      #session.add_all()
 
     return session
 
 
-if __name__ == "__main__":
-  directory_to_search = sys.argv[1]
-  geolife_root_directory = find_geolife_root(directory_to_search)
-  print(geolife_root_directory)
+import user
+def load_from_directory(directory):
+  for u in user.from_directory(directory):
+    print("Beginning yielding of records from user {0.id}".format(u))
+    for record in u:
+      yield record
+

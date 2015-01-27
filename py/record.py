@@ -7,13 +7,12 @@ from sqlalchemy import DateTime
 from sqlalchemy import Sequence
 
 
-DATETIME_STR_FORMAT = "%A, %d. %B %Y %I:%M%p"
-TABLE_NAME = "records"
+DATETIME_STR_FORMAT = "%A, %d. %B %Y %I:%M:%S%p"
 
 
 Base = declarative_base()
 class GeoLifeRecord(Base):
-  __tablename__ = TABLE_NAME
+  __tablename__ = "records"
   id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
   user = Column(Integer, index=True)
   latitude = Column(Float)
@@ -21,14 +20,10 @@ class GeoLifeRecord(Base):
   datetime = Column(DateTime, index=True)
 
   def __repr__(self):
-    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3}".format(
+    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
       self.user, self.latitude, self.longitude,
       self.datetime.strftime(DATETIME_STR_FORMAT)
     )
-
-
-def load_from_directory(directory, session):
-  print("OMG LOADING FILES!!!!")
 
 
 def initialize_table(engine):
