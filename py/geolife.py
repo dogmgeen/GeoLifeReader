@@ -36,6 +36,40 @@ class GeoLifeDataset:
     dataset. If this database has already been created, the database will
     be loaded instead of reading in the raw files based on the hash associated
     with the provided directory."""
+    self.db_session = self.__load_db(directory)
+
+  def __load_db(self, directory):
+    """Load a database session corresponding to the data within the provided
+    directory. This session may need to be created now if it was not created
+    prior."""
+    # The pre-existing SQLite database will be named according to the
+    #  hash created by the directory.
+    import hashlib
+    directory_hash = hashlib.md5(directory).hexdigest()
+    from sqlalchemy import create_engine
+    engine = create_engine(
+      'sqlite:///{0}.db'.format(directory_hash), echo=True
+    )
+
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    session = Session()
+
+    from sqlalchemy.engine.reflection import Inspector
+    inspector = Inspector.from_engine(engine)
+    import record
+    if not record.TABLE_NAME in inspector.get_table_names():
+      print("'{0}' does not exist in {1}.db".format(
+        record.TABLE_NAME, directory_hash
+      ))
+      print("'{0}' will be created and populated from files in {1}".format(
+        record.TABLE_NAME, directory
+      ))
+      record.initialize_table(engine)
+      record.load_from_directory(directory, session)
+
+    return session
 
 
 if __name__ == "__main__":
