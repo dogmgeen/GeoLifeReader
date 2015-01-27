@@ -6,9 +6,9 @@ if __name__ == "__main__":
   print("GeoLife root found at {0}".format(geolife_root_directory))
 
   geolife.GeoLifeDataset(geolife_root_directory)\
-         .retrieveByDate(date="2008-11-09")
+         .retrieveByDate(date="2008-11-09")\
+         .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)
   """
-   .boundByLocation(top="", right="", bottom="", left="")\
    .homogenizeTimeDeltas(time_delta="")\
    .convertToONE(to_file="")\
   """

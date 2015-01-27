@@ -31,6 +31,7 @@ class GeoLifeDataset:
     be loaded instead of reading in the raw files based on the hash associated
     with the provided directory."""
     self.db_session = self.__load_db(directory)
+    self.result_set = self.db_session.query(GeoLifeRecord)
     
 
   def __load_db(self, directory):
@@ -72,25 +73,38 @@ class GeoLifeDataset:
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
 
-    for instance in self.db_session.query(GeoLifeRecord)\
-                        .with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
-                        .filter(GeoLifeRecord.date==date)\
-                        .order_by(GeoLifeRecord.datetime):
-      print('-'*80)
-      print(instance)
-    
-    print("#"*80)
-    print("ALL GEOLIFE RECORDS AVAILABLE")
-    print(self.db_session.query(GeoLifeRecord).count())
-    print("#"*80)
-    print("FILTERED GEOLIFE RECORDS AVAILABLE")
-    print(
-      self.db_session.query(GeoLifeRecord)\
-          .filter(GeoLifeRecord.date==date)\
-          .count()
-    )
-    print("#"*80)
-    
+    print("+"*80)
+    print("Before removing by date")
+    print(self.result_set.count())
+
+    self.result_set = self.result_set\
+        .with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
+        .filter(GeoLifeRecord.date==date)\
+        .order_by(GeoLifeRecord.datetime)
+
+    print("+"*80)
+    print("After removing by date")
+    print(self.result_set.count())
+
+    return self
+
+
+  def boundByLocation(self, north=90., south=-90., east=180., west=-180.):
+    print("+"*80)
+    print("Before removing by location")
+    print(self.result_set.count())
+
+    self.result_set = self.result_set.filter(
+      GeoLifeRecord.latitude < north,
+      GeoLifeRecord.latitude > south,
+      GeoLifeRecord.longitude < east,
+      GeoLifeRecord.longitude > west
+    ).order_by(GeoLifeRecord.datetime)
+
+    print("+"*80)
+    print("After removing by location")
+    print(self.result_set.count())
+
     return self
 
 
