@@ -1,6 +1,7 @@
 import sys
 import os
 from datetime import datetime 
+from record import GeoLifeRecord
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -68,12 +69,11 @@ class GeoLifeDataset:
 
 
   def retrieveByDate(self, date):
-    from record import GeoLifeRecord
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
-    #.with_hint()\
 
     for instance in self.db_session.query(GeoLifeRecord)\
+                        .with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
                         .filter(GeoLifeRecord.date==date)\
                         .order_by(GeoLifeRecord.datetime):
       print('-'*80)
