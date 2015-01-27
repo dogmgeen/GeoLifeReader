@@ -1,5 +1,6 @@
 import sys
-import os 
+import os
+from datetime import datetime 
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -29,6 +30,7 @@ class GeoLifeDataset:
     be loaded instead of reading in the raw files based on the hash associated
     with the provided directory."""
     self.db_session = self.__load_db(directory)
+    
 
   def __load_db(self, directory):
     """Load a database session corresponding to the data within the provided
@@ -60,13 +62,22 @@ class GeoLifeDataset:
       ))
       import record
       record.initialize_table(engine)
-      
-      for r in load_from_directory(directory):
-        print(r)
-      print("-"*50)
-      #session.add_all()
+      session.add_all(load_from_directory(directory))
 
     return session
+
+
+  def retrieveByDate(self, date):
+    from record import GeoLifeRecord
+    if isinstance(date, str):
+      date = datetime.strptime(date, "%Y-%m-%d").date()
+    #.with_hint()\
+    for instance in self.db_session.query(GeoLifeRecord)\
+                        .filter(GeoLifeRecord.date==date)\
+                        .order_by(GeoLifeRecord.datetime):
+      print('-'*80)
+      print(instance)
+    return self
 
 
 import user

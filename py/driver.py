@@ -1,12 +1,13 @@
 import geolife
+
 if __name__ == "__main__":
   sample_dir = "/home/djmvfb/Development/GeoLifeReader/"
   geolife_root_directory = geolife.find_geolife_root(sample_dir)
   print("GeoLife root found at {0}".format(geolife_root_directory))
 
-  g = geolife.GeoLifeDataset(geolife_root_directory)
+  geolife.GeoLifeDataset(geolife_root_directory)\
+         .retrieveByDate(date="2008-11-09")
   """
-  g.retrieveByDate(date="")\
    .boundByLocation(top="", right="", bottom="", left="")\
    .homogenizeTimeDeltas(time_delta="")\
    .convertToONE(to_file="")\

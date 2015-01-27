@@ -4,6 +4,8 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Float
 from sqlalchemy import DateTime
+from sqlalchemy import Date
+from sqlalchemy import Time
 from sqlalchemy import Sequence
 
 
@@ -18,6 +20,8 @@ class GeoLifeRecord(Base):
   latitude = Column(Float)
   longitude = Column(Float)
   datetime = Column(DateTime, index=True)
+  date = Column(Date, index=True)
+  time = Column(Time, index=True)
 
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(

@@ -1,10 +1,9 @@
 import os
 import csv
-from datetime import datetime
+from utils import timestamp2datetime
 from record import GeoLifeRecord
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
-GEOLIFE_DATE_FMT = "%Y-%m-%d %H:%M:%S" 
 
 
 class GeoLifeFile:
@@ -20,15 +19,14 @@ class GeoLifeFile:
 
       reader = csv.DictReader(f, fieldnames=SCHEMA)
       for entry in reader:
-        timestamp = datetime.strptime(
-          "{date} {time}".format(**entry),
-          GEOLIFE_DATE_FMT
-        )
+        datetime = timestamp2datetime(entry)
         yield GeoLifeRecord(
           user=self.user.id,
           latitude=entry["lat"],
           longitude=entry["long"],
-          datetime=timestamp
+          datetime=datetime,
+          date=datetime.date(),
+          time=datetime.time(),
         )
   
 
