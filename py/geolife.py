@@ -72,11 +72,25 @@ class GeoLifeDataset:
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
     #.with_hint()\
+
     for instance in self.db_session.query(GeoLifeRecord)\
                         .filter(GeoLifeRecord.date==date)\
                         .order_by(GeoLifeRecord.datetime):
       print('-'*80)
       print(instance)
+    
+    print("#"*80)
+    print("ALL GEOLIFE RECORDS AVAILABLE")
+    print(self.db_session.query(GeoLifeRecord).count())
+    print("#"*80)
+    print("FILTERED GEOLIFE RECORDS AVAILABLE")
+    print(
+      self.db_session.query(GeoLifeRecord)\
+          .filter(GeoLifeRecord.date==date)\
+          .count()
+    )
+    print("#"*80)
+    
     return self
 
 
