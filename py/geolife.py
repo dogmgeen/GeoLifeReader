@@ -60,9 +60,8 @@ class GeoLifeDataset:
     if not db_exists:
       logger.info("-"*50)
       logger.info("Database does not pre-exist at {0}!".format(db_name))
-      logger.info("Database will be created and populated from files in {0}".format(
-        directory
-      ))
+      logger.info("Database will be created and populated from files"
+                  " in {0}".format(directory))
       import record
       record.initialize_table(engine)
       session.add_all(load_from_directory(directory))
@@ -108,6 +107,29 @@ class GeoLifeDataset:
     ))
     return self
 
+  def calculateStatistics(self):
+    # Determine the unique user IDs within the result set.
+    users = set()
+    for userID in self.result_set.values(GeoLifeRecord.user):
+      users.add(userID[0])
+
+    logger.info("Unique users present in current result set")
+    for userID in users:
+      logger.info("User {0}".format(userID))
+    return self
+
+
+  def homogenizeTimeDeltas(self, delta=None):
+    if delta is None:
+      # Assign the time delta based on the minimum time delta in the dataset
+      delta = self.getMinimumDelta()
+
+    logger.info("Homogenizing time deltas to {0} seconds".format(delta))
+
+  def getMinimumDelta(self):
+    """Calculate the minimum time between any two consecutive data records for
+    the same user across the current result set."""
+    
 
 import user
 def load_from_directory(directory):
