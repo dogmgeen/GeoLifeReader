@@ -109,13 +109,7 @@ class GeoLifeDataset:
 
   def calculateStatistics(self):
     # Determine the unique user IDs within the result set.
-    users = set()
-    for userID in self.result_set.values(GeoLifeRecord.user):
-      users.add(userID[0])
-
-    logger.info("Unique users present in current result set")
-    for userID in users:
-      logger.info("User {0}".format(userID))
+    users = user.from_Query(self.result_set)
     return self
 
 
