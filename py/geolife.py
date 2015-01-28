@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger("geolife.geolife")
+
 import sys
 import os
 from datetime import datetime 
@@ -47,9 +50,7 @@ class GeoLifeDataset:
     db_exists = os.path.isfile(db_name)
 
     from sqlalchemy import create_engine
-    engine = create_engine(
-      'sqlite:///{0}'.format(db_name), echo=True
-    )
+    engine = create_engine('sqlite:///{0}'.format(db_name))
 
     from sqlalchemy.orm import sessionmaker
     Session = sessionmaker()
@@ -57,9 +58,9 @@ class GeoLifeDataset:
     session = Session()
 
     if not db_exists:
-      print("-"*50)
-      print("Database does not pre-exist at {0}!".format(db_name))
-      print("Database will be created and populated from files in {0}".format(
+      logger.info("-"*50)
+      logger.info("Database does not pre-exist at {0}!".format(db_name))
+      logger.info("Database will be created and populated from files in {0}".format(
         directory
       ))
       import record
@@ -70,29 +71,30 @@ class GeoLifeDataset:
 
 
   def retrieveByDate(self, date):
+    logger.info("+"*80)
+    logger.info("Reducing result set to those occuring on {0}".format(date))
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
-
-    print("+"*80)
-    print("Before removing by date")
-    print(self.result_set.count())
+    logger.info("Before removing by date: {0}".format(
+      self.result_set.count()
+    ))
 
     self.result_set = self.result_set\
         .with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
         .filter(GeoLifeRecord.date==date)\
         .order_by(GeoLifeRecord.datetime)
 
-    print("+"*80)
-    print("After removing by date")
-    print(self.result_set.count())
-
+    logger.info("After removing by date: {0}".format(self.result_set.count()))
     return self
 
 
   def boundByLocation(self, north=90., south=-90., east=180., west=-180.):
-    print("+"*80)
-    print("Before removing by location")
-    print(self.result_set.count())
+    logger.info("+"*80)
+    logger.info("Reducing result set to within ({west}, {north}) and"
+                " ({east}, {south})".format(**locals()))
+    logger.info("Before removing by location: {0}".format(
+      self.result_set.count()
+    ))
 
     self.result_set = self.result_set.filter(
       GeoLifeRecord.latitude < north,
@@ -101,17 +103,16 @@ class GeoLifeDataset:
       GeoLifeRecord.longitude > west
     ).order_by(GeoLifeRecord.datetime)
 
-    print("+"*80)
-    print("After removing by location")
-    print(self.result_set.count())
-
+    logger.info("After removing by location: {0}".format(
+      self.result_set.count()
+    ))
     return self
 
 
 import user
 def load_from_directory(directory):
   for u in user.from_directory(directory):
-    print("Beginning yielding of records from user {0.id}".format(u))
+    logger.debug("Beginning yielding of records from user {0.id}".format(u))
     for record in u:
       yield record
 

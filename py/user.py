@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("geolife.user")
 import os
 import file
 
@@ -12,7 +14,7 @@ class GeoLifeUser:
   def __iter__(self):
     for f in self.files:
       import os
-      print("Reading from file {0}".format(os.path.basename(f.url)))
+      logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
       for r in f:
         yield r
 
@@ -21,6 +23,6 @@ def from_directory(directory):
   users = []
   for d in os.listdir(directory):
     if os.path.isdir(os.path.join(directory, d)):
-      print("Yielding user {0}".format(d))
+      logger.debug("Yielding user {0}".format(d))
       yield GeoLifeUser(user_id=d, directory=directory)
 

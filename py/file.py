@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("geolife.file")
 import os
 import csv
 from utils import timestamp2datetime

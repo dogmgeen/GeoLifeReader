@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger("geolife.utils")
 from datetime import datetime
 
 GEOLIFE_DATE_FMT = "%Y-%m-%d %H:%M:%S"
