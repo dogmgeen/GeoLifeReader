@@ -91,8 +91,5 @@ def from_Query(query):
   for record in query:
     users[record.user].add(record)
 
-  # Verify the records for each user are in order
-  for uid in users:
-    users[uid].sort()
   return users.values()
 
