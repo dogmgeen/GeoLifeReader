@@ -9,6 +9,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import Date
 from sqlalchemy import Time
 from sqlalchemy import Sequence
+from datetime import timedelta
 
 
 DATETIME_STR_FORMAT = "%A, %d. %B %Y %I:%M:%S%p"
@@ -36,3 +37,47 @@ def initialize_table(engine):
   Base.metadata.create_all(engine)
 
 
+class LinkedRecords:
+  """Linked-list style record collection"""
+  def __init__(self, records=None):
+    self.prev = None
+    self.next = None
+    self.record = None
+    self.min_time_delta = None
+
+    if records:
+      self.add(records)
+
+  def add(self, records, start=0):
+    self.record = records[start]
+    logger.info(self.record)
+
+    if len(records) != start+1:
+      self.next = LinkedRecords()
+      self.next.prev = self
+      self.next.add(records, start+1)
+
+    else:
+      logger.info("end of linked records")
+
+
+  def getMinTimeDelta(self, current_min=float('inf')):
+    """Assume there is at least one more element in front of the current
+    element."""
+    
+    delta = (self.next.record.datetime - self.record.datetime).total_seconds()
+    if delta < current_min:
+      logger.info(
+        "New smaller time delta ({0} seconds) found between"
+        " {1} and {2}".format(
+        delta,
+        self.record,
+        self.next.record,
+      ))
+      current_min = delta
+
+    if self.next.next is None:
+      return current_min
+
+    else:
+      return self.next.getMinTimeDelta(current_min=current_min)

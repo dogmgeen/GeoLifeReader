@@ -28,6 +28,12 @@ class BaseGeoLifeUser:
       self.__class__.__name__
     ))
 
+  def __bool__(self):
+    raise NotImplemented(
+      "Class {0} must implement the __bool__() method.".format(
+      self.__class__.__name__
+    ))
+
 
 class GeoLifeUserFromFile(BaseGeoLifeUser):
   def __init__(self, user_id, directory):
@@ -73,19 +79,20 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     for i in self.records:
       yield i
 
+  def __bool__(self):
+    return bool(self.records)
+
+  def __getitem__(self, key):
+    return self.records[key]
 
 def from_Query(query):
   # Split up the results by user
   users = defaultdict(GeoLifeUserFromDB)
   for record in query:
     users[record.user].add(record)
-    logger.info(record)
-  logger.info(users)
 
   # Verify the records for each user are in order
   for uid in users:
     users[uid].sort()
-    for r in users[uid]:
-      logger.info(r)
+  return users.values()
 
- 

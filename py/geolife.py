@@ -5,6 +5,7 @@ import sys
 import os
 from datetime import datetime 
 from record import GeoLifeRecord
+from record import LinkedRecords
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -110,6 +111,18 @@ class GeoLifeDataset:
   def calculateStatistics(self):
     # Determine the unique user IDs within the result set.
     users = user.from_Query(self.result_set)
+    logger.info("Found {0} users in result set".format(len(users)))
+
+    # Create a datastructure for each user's collection of records that
+    #  will make statistics gathering easier.
+    all_linked_records = [LinkedRecords(u) for u in users]
+
+
+    # Minimum difference between consecutive elements
+    min_time_delta = min([
+      r.getMinTimeDelta() for r in all_linked_records
+    ])
+    logger.info("Smallest time interval is {0} seconds".format(min_time_delta))
     return self
 
 
