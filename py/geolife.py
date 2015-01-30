@@ -111,7 +111,12 @@ class GeoLifeDataset:
     return self
 
   def calculateStatistics(self):
-    self.statistics = StatisticsCalculator(self.result_set)
+    # Determine the unique user IDs within the result set.
+    # It is assumed no further reductions on the dataset will be made.
+    self.users = user.from_Query(self.result_set)
+    logger.info("Found {0} users in result set".format(len(self.users)))
+
+    self.statistics = StatisticsCalculator(self.users)
     self.statistics.run()
     return self
 
@@ -120,9 +125,15 @@ class GeoLifeDataset:
     start = self.statistics.min_time
     end = self.statistics.max_time
 
+    print("#"*80)
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
     for d in datetimerange(start, end+delta, delta):
-      logger.debug(d)
+      logger.info(d)
+      logger.info("-"*60)
+      for u in self.users:
+        if not u.has_record_for(time=d):
+          logger.info("Missing record at {0} for {1}".format(d, u))
+      logger.info("-"*60)
 
 
 def load_from_directory(directory):

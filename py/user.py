@@ -3,6 +3,7 @@ logger = logging.getLogger("geolife.user")
 import os
 import pltfile
 from collections import defaultdict
+from record import LinkedRecords
 
 class BaseGeoLifeUser:
   def __init__(self):
@@ -85,11 +86,23 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __getitem__(self, key):
     return self.records[key]
 
+  def has_record_for(self, time):
+    return True
+
+  def link_listify_records(self):
+    self.linked_list = LinkedRecords(self.records)
+
+
 def from_Query(query):
   # Split up the results by user
   users = defaultdict(GeoLifeUserFromDB)
   for record in query:
     users[record.user].add(record)
 
-  return users.values()
+  users_list = users.values()
+  for u in users_list:
+      u.sort()
+      u.link_listify_records()
+
+  return users_list
 
