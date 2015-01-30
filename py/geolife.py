@@ -7,6 +7,7 @@ from datetime import datetime
 from record import GeoLifeRecord
 import user
 from stats import StatisticsCalculator
+from utils import datetimerange
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -46,7 +47,7 @@ class GeoLifeDataset:
     # The pre-existing SQLite database will be named according to the
     #  hash created by the directory.
     import hashlib
-    directory_hash = hashlib.md5(directory).hexdigest()
+    directory_hash = hashlib.md5(directory.encode("utf-8")).hexdigest()
 
     db_name = "{0}.db".format(directory_hash)
     db_exists = os.path.isfile(db_name)
@@ -116,7 +117,12 @@ class GeoLifeDataset:
 
   def homogenizeTimeDeltas(self, delta=None):
     delta = self.statistics.min_time_delta
+    start = self.statistics.min_time
+    end = self.statistics.max_time
+
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
+    for d in datetimerange(start, end+delta, delta):
+      logger.debug(d)
 
 
 def load_from_directory(directory):
