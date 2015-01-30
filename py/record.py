@@ -61,11 +61,11 @@ class LinkedRecords:
       logger.info("end of linked records")
 
 
-  def getMinTimeDelta(self, current_min=float('inf')):
+  def getMinTimeDelta(self, current_min=timedelta.max):
     """Assume there is at least one more element in front of the current
     element."""
     
-    delta = (self.next.record.datetime - self.record.datetime).total_seconds()
+    delta = self.next.record.datetime - self.record.datetime
     if delta < current_min:
       logger.info(
         "New smaller time delta ({0} seconds) found between"
