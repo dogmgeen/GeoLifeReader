@@ -104,3 +104,9 @@ class LinkedRecords:
     if self.prev is not None:
       self.prev.next = node
     self.prev = node
+
+  def getTimeDeltaWithNextNode(self):
+    if self.next is None:
+      raise "No future nodes exist beyond current node!"
+
+    return self.next.record.datetime - self.record.datetime

@@ -132,6 +132,21 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     self.linked_list = LinkedRecords(self.records)
 
 
+  def is_time_homogenized(self):
+    self.record_ptr = self.linked_list
+    expected_delta = self.record_ptr.getTimeDeltaWithNextNode()
+
+    while self.record_ptr.next.next is not None:
+      self.record_ptr = self.record_ptr.next
+      actual_delta = self.record_ptr.getTimeDeltaWithNextNode()
+
+      if expected_delta != actual_delta:
+        return False
+
+    return True
+
+
+
 def from_Query(query):
   # Split up the results by user
   users = defaultdict(GeoLifeUserFromDB)

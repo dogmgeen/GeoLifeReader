@@ -133,6 +133,10 @@ class GeoLifeDataset:
       for u in self.users:
         u.add_record_if_not_present_for(time=d)
 
+    # Verify time homogeneous time steps
+    for u in self.users:
+      assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
+
 
 def load_from_directory(directory):
   for u in user.from_directory(directory):
