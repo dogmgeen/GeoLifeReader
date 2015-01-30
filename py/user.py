@@ -4,6 +4,7 @@ import os
 import pltfile
 from collections import defaultdict
 from record import LinkedRecords
+from record import TimeModifiedGeoLifeRecord
 
 class BaseGeoLifeUser:
   def __init__(self):
@@ -64,6 +65,8 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __init__(self):
     BaseGeoLifeUser.__init__(self)
     self.records = []
+    self.linked_list = None
+    self.record_ptr = None
 
   def add(self, record):
     if self.id is None:
@@ -86,8 +89,44 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __getitem__(self, key):
     return self.records[key]
 
-  def has_record_for(self, time):
-    return True
+  def add_record_if_not_present_for(self, time):
+    # If a user exists, then he has at least one record.
+    # Upon initialization, the record pointed to by self.record_ptr
+    #  has a timestamp greater than or equal to the minimum timestamp
+    #  across all records for all other users. Thus, upon initialization
+    #  we will be adding records before it.
+    
+    if self.record_ptr is None:
+      self.record_ptr = self.linked_list
+
+    if self.record_ptr.record.datetime == time:
+      # A record exists with the time. Nothing is needed.
+      self.record_ptr = self.record_ptr.next
+
+    else:
+      if self.record_ptr.prev is None:
+        # Set synth'd record based on user's true initial location
+        reference_record = self.record_ptr.record
+
+      else:
+        # Set synth's record based on most recent user's location.
+        reference_record = self.record_ptr.prev.record
+
+      # A record does not exist for the given time. We need
+      #  to add it to the linked list. It will be a replication
+      #  of the current record_ptr.record, only the timing
+      #  data will be changed.
+      modified_record = TimeModifiedGeoLifeRecord(
+        base_record=reference_record,
+        timestamp=time
+      )
+      logger.info("Synthesized record")
+      logger.info("Base record:    {0}".format(reference_record))
+      logger.info("Synth'd record: {0}".format(modified_record))
+      self.record_ptr.insertBefore(
+        LinkedRecords([modified_record])
+      )
+
 
   def link_listify_records(self):
     self.linked_list = LinkedRecords(self.records)

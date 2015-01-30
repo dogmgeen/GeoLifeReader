@@ -128,12 +128,10 @@ class GeoLifeDataset:
     print("#"*80)
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
     for d in datetimerange(start, end+delta, delta):
+      logger.info("-"*60)
       logger.info(d)
-      logger.info("-"*60)
       for u in self.users:
-        if not u.has_record_for(time=d):
-          logger.info("Missing record at {0} for {1}".format(d, u))
-      logger.info("-"*60)
+        u.add_record_if_not_present_for(time=d)
 
 
 def load_from_directory(directory):

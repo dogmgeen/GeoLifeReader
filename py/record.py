@@ -33,6 +33,22 @@ class GeoLifeRecord(Base):
     )
 
 
+class TimeModifiedGeoLifeRecord:
+  def __init__(self, base_record, timestamp):
+    self.user = base_record.user
+    self.latitude = base_record.latitude
+    self.longitude = base_record.longitude
+    self.datetime = timestamp
+    self.date = timestamp.date()
+    self.time = timestamp.time()
+
+  def __repr__(self):
+    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
+      self.user, self.latitude, self.longitude,
+      self.datetime.strftime(DATETIME_STR_FORMAT)
+    )
+
+
 def initialize_table(engine):
   Base.metadata.create_all(engine)
 
@@ -43,7 +59,6 @@ class LinkedRecords:
     self.prev = None
     self.next = None
     self.record = None
-    self.min_time_delta = None
 
     if records:
       self.add(records)
@@ -81,3 +96,11 @@ class LinkedRecords:
 
     else:
       return self.next.getMinTimeDelta(current_min=current_min)
+
+
+  def insertBefore(self, node):
+    node.next = self
+    node.prev = self.prev
+    if self.prev is not None:
+      self.prev.next = node
+    self.prev = node
