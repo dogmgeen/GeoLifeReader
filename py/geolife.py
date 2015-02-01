@@ -147,7 +147,7 @@ class GeoLifeDataset:
     delta = self.statistics.min_time_delta
     start = self.statistics.min_time
     end = self.statistics.max_time
-    c = ExternalMovementReaderConverter(self.statistics, 1)
+    c = ExternalMovementReaderConverter(self.statistics, 90000)
 
     with open(to_file, "w") as f:
       logger.debug("Opening file {0}".format(to_file))
