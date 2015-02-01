@@ -1,6 +1,6 @@
 import logging
 logging.basicConfig(
-  level=logging.INFO,
+  level=logging.DEBUG,
   filename='/tmp/geolife.log',
   filemode='w'
 )
@@ -12,17 +12,16 @@ import geolife
 if __name__ == "__main__":
   try:
     sample_dir = "/home/djmvfb/Development/GeoLifeReader/"
+    search_date = "2008-11-09"
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
 
     geolife.GeoLifeDataset(geolife_root_directory)\
-           .retrieveByDate(date="2008-11-09")\
+           .retrieveByDate(date=search_date)\
            .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)\
            .calculateStatistics()\
-           .homogenizeTimeDeltas()
-    """
-     .convertToONE(to_file="")\
-    """
+           .homogenizeTimeDeltas()\
+           .convertToONE(to_file="geolife2one_{0}.csv".format(search_date))
 
   except:
     logger.exception("Stuff didn't do")

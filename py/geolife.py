@@ -8,6 +8,7 @@ from record import GeoLifeRecord
 import user
 from stats import StatisticsCalculator
 from utils import datetimerange
+from one import ExternalMovementReaderConverter
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -136,6 +137,35 @@ class GeoLifeDataset:
     # Verify time homogeneous time steps
     for u in self.users:
       assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
+
+    return self
+
+  def convertToONE(self, to_file):
+    logger.info("#"*80)
+    logger.info("Converting GeoLife to ONE format")
+    logger.info("================================")
+    delta = self.statistics.min_time_delta
+    start = self.statistics.min_time
+    end = self.statistics.max_time
+    c = ExternalMovementReaderConverter(self.statistics, 1)
+
+    with open(to_file, "w") as f:
+      logger.debug("Opening file {0}".format(to_file))
+      # Write out the header of the file.
+      # minTime maxTime minX maxX minY maxY minZ maxZ
+      f.write("{minTime} {maxTime} "
+              "{minX} {maxX} "
+              "{minY} {maxY} "
+              "{minZ} {maxZ}\n".format(
+        **c.getHeader()
+      ))
+
+      for d in datetimerange(start, end+delta, delta):
+        logger.debug("-"*40)
+        logger.debug("Iterating through records on {0}".format(d))
+        for u in self.users:
+          logger.debug(u)
+          f.write("{0}\n".format(c(u.getRecordOn(timestamp=d))))
 
 
 def load_from_directory(directory):

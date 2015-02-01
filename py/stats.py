@@ -1,9 +1,14 @@
 import logging
 logger = logging.getLogger("geolife.stats")
+import extent
 
 class StatisticsCalculator:
   def __init__(self, users):
     self.users = users
+    self.min_longitude = None
+    self.max_longitude = None
+    self.min_latitude = None
+    self.max_latitude = None
 
   def run(self):
     # Determine the record with the earliest timestamp
@@ -29,4 +34,19 @@ class StatisticsCalculator:
     logger.info("Smallest time interval is {0} seconds".format(
       self.min_time_delta
     ))
+
+    # Min and Max lat/longs.
+    ext = reduce(
+      extent.extendExtents, 
+      [u.getExtent() for u in self.users],
+    )
+    self.min_longitude, self.max_longitude, self.min_latitude, self.max_latitude = ext.asMinMaxLongLatTuple()
+
+  def getNormalizedMaxY(self):
+    pass
+
+  def getNormalizedMaxX(self):
+    pass
+
+
 

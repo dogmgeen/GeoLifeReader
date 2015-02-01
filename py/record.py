@@ -10,6 +10,7 @@ from sqlalchemy import Date
 from sqlalchemy import Time
 from sqlalchemy import Sequence
 from datetime import timedelta
+from extent import RectangularExtent
 
 
 DATETIME_STR_FORMAT = "%A, %d. %B %Y %I:%M:%S%p"
@@ -71,10 +72,23 @@ class LinkedRecords:
       self.next = LinkedRecords()
       self.next.prev = self
       self.next.add(records, start+1)
+      
+      if self.next.extent is None:
+        logger.info("initializing extents")
+        self.extent = RectangularExtent(
+          self.record.longitude,
+          self.next.record.longitude,
+          self.record.latitude,
+          self.next.record.latitude,
+        )
+
+      else:
+        self.extent = self.next.extent
+        self.extent.addPoint(self.record.longitude, self.record.latitude)
 
     else:
       logger.info("end of linked records")
-
+      self.extent = None
 
   def getMinTimeDelta(self, current_min=timedelta.max):
     """Assume there is at least one more element in front of the current
@@ -110,3 +124,7 @@ class LinkedRecords:
       raise "No future nodes exist beyond current node!"
 
     return self.next.record.datetime - self.record.datetime
+
+
+def getExtent(x1, x2, y1, y2):
+  return (min(x1, x2), max(x1, x2), min(y1, y2), max(y1, y2))

@@ -131,7 +131,6 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def link_listify_records(self):
     self.linked_list = LinkedRecords(self.records)
 
-
   def is_time_homogenized(self):
     self.record_ptr = self.linked_list
     expected_delta = self.record_ptr.getTimeDeltaWithNextNode()
@@ -143,8 +142,22 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       if expected_delta != actual_delta:
         return False
 
+    # Reset record pointer.
+    self.record_ptr = self.linked_list
     return True
 
+  def getExtent(self):
+    return self.linked_list.extent
+
+  def getRecordOn(self, timestamp):
+    """Assume the timestamps are incrementing upward at a regular interval"""
+    assert self.record_ptr.record.datetime == timestamp, (
+      "Record {0} does not have expected timestamp of {1}".format(
+      self.record_ptr.record, timestamp
+    ))
+    r = self.record_ptr.record
+    self.record_ptr = self.record_ptr.next
+    return r
 
 
 def from_Query(query):
