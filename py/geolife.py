@@ -68,8 +68,16 @@ class GeoLifeDataset:
                   " in {0}".format(directory))
       import record
       record.initialize_table(engine)
-      for r in load_from_directory(directory):
-        session.add(r)
+      for u in user.from_directory(directory):
+        logger.debug("Beginning yielding of records from user {0.id}".format(u))
+        for f in u.files:
+          logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
+          session.add_all(f)
+          session.commit()
+        #del u.files[:]
+
+      #for r in load_from_directory(directory):
+      #  session.add(r)
 
     return session
 

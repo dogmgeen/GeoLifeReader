@@ -10,7 +10,7 @@ SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
 
 class GeoLifeFile:
   def __init__(self, url, user):
-    self.user = user
+    self.user = user.id
     self.url = url
 
   def __iter__(self):
@@ -23,7 +23,7 @@ class GeoLifeFile:
       for entry in reader:
         datetime = timestamp2datetime(entry)
         yield GeoLifeRecord(
-          user=self.user.id,
+          user=self.user,
           latitude=entry["lat"],
           longitude=entry["long"],
           datetime=datetime,
