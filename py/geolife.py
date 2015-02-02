@@ -68,7 +68,8 @@ class GeoLifeDataset:
                   " in {0}".format(directory))
       import record
       record.initialize_table(engine)
-      session.add_all(load_from_directory(directory))
+      for r in load_from_directory(directory):
+        session.add(r)
 
     return session
 
