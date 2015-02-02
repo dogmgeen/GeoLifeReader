@@ -11,7 +11,7 @@ import geolife
 
 if __name__ == "__main__":
   try:
-    sample_dir = "/home/djmvfb/Development/GeoLifeReader/"
+    sample_dir = "/home/djmvfb/Downloads/geo/"#Development/GeoLifeReader/"
     search_date = "2008-11-09"
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
   except:
     logger.exception("Stuff didn't do")
-
+  """
   finally:
     logger.warning("#"*80)
     logger.warning("DATABASE IS BEING DELETED.")
@@ -33,3 +33,4 @@ if __name__ == "__main__":
     logger.warning("#"*80)
     import os
     os.remove("05d6c855fdfce881d0ddba777c3fcfcd.db")
+  """
