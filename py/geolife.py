@@ -81,6 +81,15 @@ class GeoLifeDataset:
 
     return session
 
+  def onlyRetrieveSomeUsers(self, n, randomize=False):
+    # retrieve all unique user IDs present in the database
+    # obtain a subset of the users of size n
+    # Reduce result set such that only records that have a user in the subset
+    #  are present.
+    self.result_set = self.result_set.filter(
+      GeoLifeRecord.user.in_(selected_user_ids)
+    )
+    return self
 
   def retrieveByDate(self, date):
     logger.info("+"*80)
