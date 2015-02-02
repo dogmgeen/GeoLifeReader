@@ -9,6 +9,7 @@ import user
 from stats import StatisticsCalculator
 from utils import datetimerange
 from one import ExternalMovementReaderConverter
+from sqlalchemy.sql import select
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -54,11 +55,11 @@ class GeoLifeDataset:
     db_exists = os.path.isfile(db_name)
 
     from sqlalchemy import create_engine
-    engine = create_engine('sqlite:///{0}'.format(db_name))
+    self.engine = create_engine('sqlite:///{0}'.format(db_name))
 
     from sqlalchemy.orm import sessionmaker
     Session = sessionmaker()
-    Session.configure(bind=engine)
+    Session.configure(bind=self.engine)
     session = Session()
 
     if not db_exists:
@@ -67,7 +68,7 @@ class GeoLifeDataset:
       logger.info("Database will be created and populated from files"
                   " in {0}".format(directory))
       import record
-      record.initialize_table(engine)
+      record.initialize_table(self.engine)
       for u in user.from_directory(directory):
         logger.debug("Beginning yielding of records from user {0.id}".format(u))
         for f in u.files:
@@ -83,7 +84,36 @@ class GeoLifeDataset:
 
   def onlyRetrieveSomeUsers(self, n, randomize=False):
     # retrieve all unique user IDs present in the database
+    s = select([GeoLifeRecord.user]).distinct()
+    conn = self.engine.connect()
+    #result = conn.execute(s)
+    user_ids = [r for r, in conn.execute(s)]
+    #for r, in result:
+    #  print("Unique user: {0}".format(r))
+    #result.close()
+    print("User IDs: {0}".format(user_ids))
+
     # obtain a subset of the users of size n
+    if len(user_ids) > n:
+      if randomize:
+        import random
+        import time
+        random.seed(time.time())
+        selected_user_ids = random.sample(user_ids, n)
+
+      else:
+        user_ids.sort()
+        selected_user_ids = user_ids[:n]
+
+      assert len(selected_user_ids) == n, "Selected set of user IDs is not of size {0}, but of size {1}".format(n, len(selected_user_ids))
+
+    else:
+      logger.warning("Only {0} users are present in the database. A subset of"
+                     " size {1} will only include {0} users.".format(
+                     len(user_ids), n
+      ))
+      selected_user_ids = user_ids
+
     # Reduce result set such that only records that have a user in the subset
     #  are present.
     self.result_set = self.result_set.filter(
@@ -100,8 +130,8 @@ class GeoLifeDataset:
       self.result_set.count()
     ))
 
+    #.with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
     self.result_set = self.result_set\
-        .with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
         .filter(GeoLifeRecord.date==date)\
         .order_by(GeoLifeRecord.datetime)
 
