@@ -75,10 +75,6 @@ class GeoLifeDataset:
           logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
           session.add_all(f)
           session.commit()
-        #del u.files[:]
-
-      #for r in load_from_directory(directory):
-      #  session.add(r)
 
     return session
 
@@ -114,11 +110,20 @@ class GeoLifeDataset:
       ))
       selected_user_ids = user_ids
 
+    print("Selected user IDs: {0}".format(selected_user_ids))
     # Reduce result set such that only records that have a user in the subset
     #  are present.
+    logger.info("Before reducing by user ID: {0}".format(
+      self.result_set.count()
+    ))
+
     self.result_set = self.result_set.filter(
       GeoLifeRecord.user.in_(selected_user_ids)
     )
+
+    logger.info("After reducing by user ID: {0}".format(
+      self.result_set.count()
+    ))
     return self
 
   def retrieveByDate(self, date):

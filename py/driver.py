@@ -11,7 +11,7 @@ import geolife
 
 if __name__ == "__main__":
   try:
-    sample_dir = "/home/kp/Development/GeoLifeReader/sample/"
+    sample_dir = "/home/djmvfb/Downloads/geo/"#"/home/kp/Development/GeoLifeReader/sample/"
     search_date = "2008-11-09"
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
