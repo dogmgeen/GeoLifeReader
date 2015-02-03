@@ -87,7 +87,7 @@ class GeoLifeDataset:
     #for r, in result:
     #  print("Unique user: {0}".format(r))
     #result.close()
-    print("User IDs: {0}".format(user_ids))
+    logger.info("User IDs: {0}".format(user_ids))
 
     # obtain a subset of the users of size n
     if len(user_ids) > n:
@@ -110,10 +110,10 @@ class GeoLifeDataset:
       ))
       selected_user_ids = user_ids
 
-    print("Selected user IDs: {0}".format(selected_user_ids))
+    logger.info("Selected user IDs: {0}".format(selected_user_ids))
     # Reduce result set such that only records that have a user in the subset
     #  are present.
-    logger.info("Before reducing by user ID: {0}".format(
+    logger.debug("Before reducing by user ID: {0}".format(
       self.result_set.count()
     ))
 
@@ -121,7 +121,7 @@ class GeoLifeDataset:
       GeoLifeRecord.user.in_(selected_user_ids)
     )
 
-    logger.info("After reducing by user ID: {0}".format(
+    logger.debug("After reducing by user ID: {0}".format(
       self.result_set.count()
     ))
     return self
@@ -131,7 +131,7 @@ class GeoLifeDataset:
     logger.info("Reducing result set to those occuring on {0}".format(date))
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
-    logger.info("Before removing by date: {0}".format(
+    logger.debug("Before removing by date: {0}".format(
       self.result_set.count()
     ))
 
@@ -140,7 +140,7 @@ class GeoLifeDataset:
         .filter(GeoLifeRecord.date==date)\
         .order_by(GeoLifeRecord.datetime)
 
-    logger.info("After removing by date: {0}".format(self.result_set.count()))
+    logger.debug("After removing by date: {0}".format(self.result_set.count()))
     return self
 
 
@@ -148,7 +148,7 @@ class GeoLifeDataset:
     logger.info("+"*80)
     logger.info("Reducing result set to within ({west}, {north}) and"
                 " ({east}, {south})".format(**locals()))
-    logger.info("Before removing by location: {0}".format(
+    logger.debug("Before removing by location: {0}".format(
       self.result_set.count()
     ))
 
@@ -159,7 +159,7 @@ class GeoLifeDataset:
       GeoLifeRecord.longitude > west
     ).order_by(GeoLifeRecord.datetime)
 
-    logger.info("After removing by location: {0}".format(
+    logger.debug("After removing by location: {0}".format(
       self.result_set.count()
     ))
     return self
@@ -167,6 +167,8 @@ class GeoLifeDataset:
   def calculateStatistics(self):
     # Determine the unique user IDs within the result set.
     # It is assumed no further reductions on the dataset will be made.
+    logger.info("+"*80)
+    logger.info("Calculating statistics")
     self.users = user.from_Query(self.result_set)
     logger.info("Found {0} users in result set".format(len(self.users)))
 
@@ -182,8 +184,8 @@ class GeoLifeDataset:
     print("#"*80)
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
     for d in datetimerange(start, end+delta, delta):
-      logger.info("-"*60)
-      logger.info(d)
+      logger.debug("-"*60)
+      logger.debug("Iterating through user records on {0}".format(d))
       for u in self.users:
         u.add_record_if_not_present_for(time=d)
 
@@ -203,7 +205,7 @@ class GeoLifeDataset:
     c = ExternalMovementReaderConverter(self.statistics, 90000)
 
     with open(to_file, "w") as f:
-      logger.debug("Opening file {0}".format(to_file))
+      logger.info("Opening file {0}".format(to_file))
       # Write out the header of the file.
       # minTime maxTime minX maxX minY maxY minZ maxZ
       f.write("{minTime} {maxTime} "
@@ -217,7 +219,7 @@ class GeoLifeDataset:
         logger.debug("-"*40)
         logger.debug("Iterating through records on {0}".format(d))
         for u in self.users:
-          logger.debug(u)
+          logger.debug("Writing all records from {0} at {1}".format(u, d))
           f.write("{0}\n".format(c(u.getRecordOn(timestamp=d))))
 
 

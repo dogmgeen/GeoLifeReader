@@ -12,10 +12,6 @@ from sqlalchemy import Sequence
 from datetime import timedelta
 from extent import RectangularExtent
 
-
-DATETIME_STR_FORMAT = "%A, %d. %B %Y %I:%M:%S%p"
-
-
 Base = declarative_base()
 class GeoLifeRecord(Base):
   __tablename__ = "records"
@@ -30,7 +26,7 @@ class GeoLifeRecord(Base):
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
       self.user, self.latitude, self.longitude,
-      self.datetime.strftime(DATETIME_STR_FORMAT)
+      self.datetime
     )
 
 
@@ -46,7 +42,7 @@ class TimeModifiedGeoLifeRecord:
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
       self.user, self.latitude, self.longitude,
-      self.datetime.strftime(DATETIME_STR_FORMAT)
+      self.datetime
     )
 
 
@@ -66,7 +62,9 @@ class LinkedRecords:
 
   def add(self, records, start=0):
     self.record = records[start]
-    logger.info(self.record)
+    logger.debug("Adding record #{0} to linked list: {1}".format(
+      start+1, self.record
+    ))
 
     if len(records) != start+1:
       self.next = LinkedRecords()
@@ -74,7 +72,7 @@ class LinkedRecords:
       self.next.add(records, start+1)
       
       if self.next.extent is None:
-        logger.info("initializing extents")
+        logger.debug("Initializing extents")
         self.extent = RectangularExtent(
           self.record.longitude,
           self.next.record.longitude,
@@ -87,18 +85,19 @@ class LinkedRecords:
         self.extent.addPoint(self.record.longitude, self.record.latitude)
 
     else:
-      logger.info("end of linked records")
+      logger.debug("End of linked list. Total records: {0}".format(start+1))
+      logger.debug("+"*80)
       self.extent = None
 
   def getMinTimeDelta(self, current_min=timedelta.max):
     """Assume there is at least one more element in front of the current
     element."""
-    
     delta = self.next.record.datetime - self.record.datetime
     if delta < current_min:
       logger.info(
-        "New smaller time delta ({0} seconds) found between"
-        " {1} and {2}".format(
+        "User #{0} has new smaller time delta ({1}) found between"
+        "\n\t{2} and\n\t{3}".format(
+        self.record.user,
         delta,
         self.record,
         self.next.record,

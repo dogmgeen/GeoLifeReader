@@ -47,7 +47,6 @@ class GeoLifeUserFromFile(BaseGeoLifeUser):
 
   def __iter__(self):
     for f in self.files:
-      import os
       logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
       for r in f:
         yield r
@@ -120,9 +119,9 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
         base_record=reference_record,
         timestamp=time
       )
-      logger.info("Synthesized record")
-      logger.info("Base record:    {0}".format(reference_record))
-      logger.info("Synth'd record: {0}".format(modified_record))
+      logger.debug("Synthesized record")
+      logger.debug("Base record:    {0}".format(reference_record))
+      logger.debug("Synth'd record: {0}".format(modified_record))
       self.record_ptr.insertBefore(
         LinkedRecords([modified_record])
       )

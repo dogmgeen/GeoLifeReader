@@ -10,6 +10,7 @@ SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
 
 class GeoLifeFile:
   def __init__(self, url, user):
+    logger.debug("Initializing GeoLifeFile at {0}".format(url))
     self.user = user.id
     self.url = url
 

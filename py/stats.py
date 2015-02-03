@@ -42,11 +42,3 @@ class StatisticsCalculator:
     )
     self.min_longitude, self.max_longitude, self.min_latitude, self.max_latitude = ext.asMinMaxLongLatTuple()
 
-  def getNormalizedMaxY(self):
-    pass
-
-  def getNormalizedMaxX(self):
-    pass
-
-
-

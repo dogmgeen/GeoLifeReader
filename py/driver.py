@@ -5,7 +5,9 @@ logging.basicConfig(
   filemode='w'
 )
 logger = logging.getLogger("geolife")
-logger.addHandler(logging.StreamHandler())
+stdout = logging.StreamHandler()
+stdout.setLevel(logging.INFO)
+logger.addHandler(stdout)
 
 import geolife
 import sys
