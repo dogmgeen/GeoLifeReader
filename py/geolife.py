@@ -3,13 +3,15 @@ logger = logging.getLogger("geolife.geolife")
 
 import sys
 import os
-from datetime import datetime 
+from datetime import datetime
+from datetime import timedelta
 from record import GeoLifeRecord
 import user
 from stats import StatisticsCalculator
 from utils import datetimerange
 from one import ExternalMovementReaderConverter
 from sqlalchemy.sql import select
+import time
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -25,6 +27,14 @@ def find_geolife_root(directory_to_search):
   #  and subsequently all raw data files.
   return os.path.dirname(os.path.dirname(directory_containing_plt))
 
+
+def get_num_files(directory):
+  n = 0
+  for d, subd, files in os.walk(directory):
+    for f in files:
+      if f.lower().endswith(".plt"):
+        n += 1
+  return n
 
 class GeoLifeDataset:
   def __init__(self, directory):
@@ -52,10 +62,17 @@ class GeoLifeDataset:
     directory_hash = hashlib.md5(directory.encode("utf-8")).hexdigest()
 
     db_name = "{0}.db".format(directory_hash)
-    db_exists = os.path.isfile(db_name)
+    db_exists = False# os.path.isfile(db_name)
 
     from sqlalchemy import create_engine
-    self.engine = create_engine('sqlite:///{0}'.format(db_name))
+    self.engine = create_engine(
+      "{dialect}://{username}:{password}@{host}/{database}".format(
+      dialect='mysql',
+      username='kp',
+      password='nope',
+      host='localhost',
+      database='geolife'
+    ))
 
     from sqlalchemy.orm import sessionmaker
     Session = sessionmaker()
@@ -69,12 +86,36 @@ class GeoLifeDataset:
                   " in {0}".format(directory))
       import record
       record.initialize_table(self.engine)
+      logger.info("Table initialized")
+
+      n = get_num_files(directory)
+      i = 0
+      avg = 0
+
       for u in user.from_directory(directory):
-        logger.debug("Beginning yielding of records from user {0.id}".format(u))
+        logger.info("Beginning yielding of records from user {0.id}".format(u))
         for f in u.files:
-          logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
+          i += 1
+          logger.info("{0:.4%} complete! Reading from file {1}"
+                      " ({2} out of {3} files)".format(
+            float(i)/n,
+            os.path.basename(f.url),
+            i, n
+          ))
+          start = datetime.now()
+
           session.add_all(f)
           session.commit()
+
+          duration = datetime.now() - start
+          avg = (duration.total_seconds() + i*avg)/(i+1)
+          eta = avg*(n-i)
+          average = timedelta(seconds=avg)
+          eta_delta = timedelta(seconds=int(eta))
+          logger.info("File {0} took {1} seconds (average: {2})".format(
+            os.path.basename(f.url), duration, average
+          ))
+          logger.info(" "*100 + "ETA: {0}".format(eta_delta))
 
     return session
 
