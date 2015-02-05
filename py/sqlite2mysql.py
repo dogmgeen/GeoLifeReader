@@ -41,6 +41,10 @@ class OldGeoLifeRecord(Base):
       self.datetime
     )
 
+from sqlalchemy.sql import select
+def get_unique_users(conn):
+  s = select([OldGeoLifeRecord.user]).distinct()
+  return [r for r, in conn.execute(s)]
 
 
 if __name__ == "__main__":
@@ -62,6 +66,9 @@ if __name__ == "__main__":
 
     SQLiteSession = sessionmaker(bind=sqlite_engine)
     sqlite_session = SQLiteSession()
+    result_set = sqlite_session.query(OldGeoLifeRecord)
+    for r in result_set:
+      print(r)
 
     """
     MySQLSession  = sessionmaker(bind=mysql_engine)
@@ -69,11 +76,9 @@ if __name__ == "__main__":
     print(mysql_session)
     """
     
-    from sqlalchemy.sql import select
-    s = select([OldGeoLifeRecord.user]).distinct()
     conn = sqlite_engine.connect()
-    user_ids = [r for r, in conn.execute(s)]
-    print("User IDs: {0}".format(user_ids))
+    print("Unique users: {0}".format(get_unique_users(conn)))
+
     """
       mysql_session.add(record.GeoLifeRecord(
         user=r.user,
