@@ -9,6 +9,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import Date
 from sqlalchemy import Time
 from sqlalchemy import Sequence
+from sqlalchemy import Boolean
 from datetime import timedelta
 from extent import RectangularExtent
 
@@ -16,12 +17,13 @@ Base = declarative_base()
 class GeoLifeRecord(Base):
   __tablename__ = "records"
   id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer, index=True)
+  user = Column(Integer)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
-  datetime = Column(DateTime, index=True)
-  date = Column(Date, index=True)
-  time = Column(Time, index=True)
+  datetime = Column(DateTime)#, index=True)
+  date = Column(Date)#, index=True)
+  time = Column(Time)#, index=True)
+  is_synthesized = Column(Boolean, default=False)
 
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
