@@ -56,14 +56,6 @@ class GeoLifeDataset:
     """Load a database session corresponding to the data within the provided
     directory. This session may need to be created now if it was not created
     prior."""
-    # The pre-existing SQLite database will be named according to the
-    #  hash created by the directory.
-    import hashlib
-    directory_hash = hashlib.md5(directory.encode("utf-8")).hexdigest()
-
-    db_name = "{0}.db".format(directory_hash)
-    db_exists = False# os.path.isfile(db_name)
-
     from sqlalchemy import create_engine
     self.engine = create_engine(
       "{dialect}://{username}:{password}@{host}/{database}".format(
@@ -78,7 +70,7 @@ class GeoLifeDataset:
     Session = sessionmaker()
     Session.configure(bind=self.engine)
     session = Session()
-
+    """
     if not db_exists:
       logger.info("-"*50)
       logger.info("Database does not pre-exist at {0}!".format(db_name))
@@ -116,7 +108,7 @@ class GeoLifeDataset:
             os.path.basename(f.url), duration, average
           ))
           logger.info(" "*100 + "ETA: {0}".format(eta_delta))
-
+    """
     return session
 
   def onlyRetrieveSomeUsers(self, n, randomize=False):
