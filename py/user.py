@@ -4,7 +4,7 @@ import os
 import pltfile
 from collections import defaultdict
 from record import LinkedRecords
-from record import TimeModifiedGeoLifeRecord
+from record import GeoLifeRecord
 
 class BaseGeoLifeUser:
   def __init__(self):
@@ -66,6 +66,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     self.records = []
     self.linked_list = None
     self.record_ptr = None
+    self.synthesized_records = []
 
   def add(self, record):
     if self.id is None:
@@ -88,7 +89,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __getitem__(self, key):
     return self.records[key]
 
-  def add_record_if_not_present_for(self, time):
+  def add_record_if_not_present_for(self, timestamp):
     # If a user exists, then he has at least one record.
     # Upon initialization, the record pointed to by self.record_ptr
     #  has a timestamp greater than or equal to the minimum timestamp
@@ -98,7 +99,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     if self.record_ptr is None:
       self.record_ptr = self.linked_list
 
-    if self.record_ptr.record.datetime == time:
+    if self.record_ptr.record.datetime == timestamp:
       # A record exists with the time. Nothing is needed.
       self.record_ptr = self.record_ptr.next
 
@@ -115,9 +116,14 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       #  to add it to the linked list. It will be a replication
       #  of the current record_ptr.record, only the timing
       #  data will be changed.
-      modified_record = TimeModifiedGeoLifeRecord(
-        base_record=reference_record,
-        timestamp=time
+      modified_record = GeoLifeRecord(
+        user=reference_record.user,
+        latitude=reference_record.latitude,
+        longitude=reference_record.longitude,
+        datetime=timestamp,
+        date=timestamp.date(),
+        time=timestamp.time(),
+        is_synthesized=True,
       )
       logger.debug("Synthesized record")
       logger.debug("Base record:    {0}".format(reference_record))
@@ -125,9 +131,10 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       self.record_ptr.insertBefore(
         LinkedRecords([modified_record])
       )
-
+      self.synthesized_records.append(modified_record)
 
   def link_listify_records(self):
+    logger.info("Link listifying {0}".format(self))
     self.linked_list = LinkedRecords(self.records)
 
   def is_time_homogenized(self):

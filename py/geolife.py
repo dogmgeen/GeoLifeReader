@@ -220,10 +220,21 @@ class GeoLifeDataset:
       logger.debug("-"*60)
       logger.debug("Iterating through user records on {0}".format(d))
       for u in self.users:
-        u.add_record_if_not_present_for(time=d)
+        u.add_record_if_not_present_for(timestamp=d)
+        if len(u.synthesized_records) > 1000:
+          logger.info("Adding synthesized records for {0} to database".format(
+            u
+          ))
+          self.db_session.add_all(u.synthesized_records)
+          self.db_session.commit()
+          del u.synthesized_records[:]
 
     # Verify time homogeneous time steps
     for u in self.users:
+      self.db_session.add_all(u.synthesized_records)
+      self.db_session.commit()
+      del u.synthesized_records[:]
+
       assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
 
     return self
