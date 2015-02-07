@@ -231,10 +231,14 @@ class GeoLifeDataset:
 
     # Verify time homogeneous time steps
     for u in self.users:
-      self.db_session.add_all(u.synthesized_records)
-      self.db_session.commit()
-      del u.synthesized_records[:]
+      if u.synthesized_records:
+        self.db_session.add_all(u.synthesized_records)
+        self.db_session.commit()
+        del u.synthesized_records[:]
 
+      # Reset the pointer u.linked_list to point to the new head if one was
+      #  created.
+      u.verifyLinkListPointsToTrueHead()
       assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
 
     return self
