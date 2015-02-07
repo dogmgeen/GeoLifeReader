@@ -128,9 +128,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       logger.debug("Synthesized record")
       logger.debug("Base record:    {0}".format(reference_record))
       logger.debug("Synth'd record: {0}".format(modified_record))
-      self.record_ptr.insertBefore(
-        LinkedRecords([modified_record])
-      )
+      self.record_ptr.insertBefore(modified_record)
       self.synthesized_records.append(modified_record)
 
   def link_listify_records(self):
@@ -164,6 +162,13 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     r = self.record_ptr.record
     self.record_ptr = self.record_ptr.next
     return r
+
+  def verifyLinkListPointsToTrueHead(self):
+    head = self.linked_list
+    while head.prev is not None:
+      head = head.prev
+    self.linked_list = head
+    self.record_ptr = head
 
 
 def from_Query(query):
