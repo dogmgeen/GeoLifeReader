@@ -42,38 +42,35 @@ class LinkedRecords:
     self.prev = None
     self.next = None
     self.record = None
+    self.extent = None
 
-    if records:
-      self.add(records)
+    if records is not None:
+      # Create the linked list, with the end node having None as the next
+      current = self
+      for i in range(len(records)):
+        logger.debug("Linking record #{0} of {1}".format(i, len(records)))
+        current.record = records[i]
+        n = LinkedRecords()
+        current.next = n
+        n.prev = current
+        current = n
+      logger.info("Linking of {0} records complete!".format(len(records)))
+      current.prev.next = None
 
-  def add(self, records, start=0):
-    self.record = records[start]
-    logger.debug("Adding record #{0} to linked list: {1}".format(
-      start+1, self.record
-    ))
-
-    if len(records) != start+1:
-      self.next = LinkedRecords()
-      self.next.prev = self
-      self.next.add(records, start+1)
-      
-      if self.next.extent is None:
-        logger.debug("Initializing extents")
-        self.extent = RectangularExtent(
-          self.record.longitude,
-          self.next.record.longitude,
-          self.record.latitude,
-          self.next.record.latitude,
+      # Create the extents. The last node will have no extent, but the second
+      #  to last node will include the extent of itself and the next node.
+      current = current.prev.prev
+      current.extent = RectangularExtent(
+        current.record.longitude, current.next.record.longitude,
+        current.record.latitude, current.next.record.latitude,
+      )
+      while current.prev is not None:
+        current = current.prev
+        current.extent = current.next.extent
+        current.extent.addPoint(
+          current.record.longitude, current.record.latitude
         )
-
-      else:
-        self.extent = self.next.extent
-        self.extent.addPoint(self.record.longitude, self.record.latitude)
-
-    else:
-      logger.debug("End of linked list. Total records: {0}".format(start+1))
-      logger.debug("+"*80)
-      self.extent = None
+      logger.debug("Finished setting up extents") 
 
   def getMinTimeDelta(self, current_min=timedelta.max):
     """Assume there is at least one more element in front of the current
@@ -97,12 +94,14 @@ class LinkedRecords:
       return self.next.getMinTimeDelta(current_min=current_min)
 
 
-  def insertBefore(self, node):
-    node.next = self
-    node.prev = self.prev
+  def insertBefore(self, record):
+    n = LinkedRecords()
+    n.next = self
+    n.prev = self.prev
     if self.prev is not None:
-      self.prev.next = node
-    self.prev = node
+      self.prev.next = n
+    self.prev = n
+    n.record = record
 
   def getTimeDeltaWithNextNode(self):
     if self.next is None:
