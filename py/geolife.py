@@ -70,10 +70,8 @@ class GeoLifeDataset:
     Session = sessionmaker()
     Session.configure(bind=self.engine)
     session = Session()
-    """
-    if not db_exists:
+    if True:
       logger.info("-"*50)
-      logger.info("Database does not pre-exist at {0}!".format(db_name))
       logger.info("Database will be created and populated from files"
                   " in {0}".format(directory))
       import record
@@ -108,7 +106,6 @@ class GeoLifeDataset:
             os.path.basename(f.url), duration, average
           ))
           logger.info(" "*100 + "ETA: {0}".format(eta_delta))
-    """
     return session
 
   def onlyRetrieveSomeUsers(self, n, randomize=False):
@@ -221,7 +218,7 @@ class GeoLifeDataset:
       logger.debug("Iterating through user records on {0}".format(d))
       for u in self.users:
         u.add_record_if_not_present_for(timestamp=d)
-        if len(u.synthesized_records) > 1000:
+        if len(u.synthesized_records) > 10000:
           logger.info("Adding synthesized records for {0} to database".format(
             u
           ))

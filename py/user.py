@@ -102,6 +102,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     if self.record_ptr.record.datetime == timestamp:
       # A record exists with the time. Nothing is needed.
       self.record_ptr = self.record_ptr.next
+      return
 
     else:
       if self.record_ptr.prev is None:
@@ -129,13 +130,38 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       logger.debug("Base record:    {0}".format(reference_record))
       logger.debug("Synth'd record: {0}".format(modified_record))
       self.record_ptr.insertBefore(modified_record)
+      if self.record_ptr.prev.prev is None:
+        new_r = self.record_ptr.prev.record
+        curr = self.record_ptr.record
+        assert new_r.datetime < curr.datetime, "Record {0} was incorrected placed before {1}".format(
+          new_r,
+          curr,
+        )
+
+      else:
+        prev = self.record_ptr.prev.prev.record
+        new_r = self.record_ptr.prev.record
+        curr = self.record_ptr.record
+        assert prev.datetime < new_r.datetime < curr.datetime, "Record {0} was incorrected placed between {1} and {2}".format(
+          prev, new_r, curr,
+        )
       self.synthesized_records.append(modified_record)
 
   def link_listify_records(self):
     logger.info("Link listifying {0}".format(self))
     self.linked_list = LinkedRecords(self.records)
 
+    # Have record_ptr point to the head of the linked list
+    self.record_ptr = self.linked_list
+
+    # Let's verify that the ith element occurs before the ith.next element
+    current = self.record_ptr
+    while current.next is not None:
+      assert current.record.datetime < current.next.record.datetime, "{0} did not occur before {1}".format(current.record, current.next.record)
+      current = current.next
+
   def is_time_homogenized(self):
+    logger.info("Verifying time homogenization for {0}".format(self))
     self.record_ptr = self.linked_list
     expected_delta = self.record_ptr.getTimeDeltaWithNextNode()
 
@@ -144,6 +170,12 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       actual_delta = self.record_ptr.getTimeDeltaWithNextNode()
 
       if expected_delta != actual_delta:
+        logger.error("Following records do not have expected time delta of"
+                     " {0}\n\t{1}\n\t{2}".format(
+                       expected_delta,
+                       self.record_ptr.record,
+                       self.record_ptr.next.record
+        ))
         return False
 
     # Reset record pointer.
