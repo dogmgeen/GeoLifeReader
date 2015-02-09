@@ -48,7 +48,9 @@ class LinkedRecords:
       # Create the linked list, with the end node having None as the next
       current = self
       for i in range(len(records)):
-        logger.debug("Linking record #{0} of {1}".format(i, len(records)))
+        logger.debug("Linking record #{0} of {1}: {2}".format(
+          i, len(records), records[i],
+        ))
         current.record = records[i]
         n = LinkedRecords()
         current.next = n
@@ -103,11 +105,23 @@ class LinkedRecords:
     self.prev = n
     n.record = record
 
+  def insertAfter(self, record):
+    n = LinkedRecords()
+    n.prev = self
+    n.next = self.next
+    if self.next is not None:
+      self.next.prev = n
+    self.next = n
+    n.record = record
+
   def getTimeDeltaWithNextNode(self):
     if self.next is None:
       raise "No future nodes exist beyond current node!"
 
     return self.next.record.datetime - self.record.datetime
+
+  def __str__(self):
+    return str(self.record)
 
 
 def getExtent(x1, x2, y1, y2):

@@ -5,6 +5,8 @@ import pltfile
 from collections import defaultdict
 from record import LinkedRecords
 from record import GeoLifeRecord
+from utils import datetimerange
+from sqlalchemy import update
 
 class BaseGeoLifeUser:
   def __init__(self):
@@ -67,6 +69,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     self.linked_list = None
     self.record_ptr = None
     self.synthesized_records = []
+    self.modified_records = []
 
   def add(self, record):
     if self.id is None:
@@ -89,63 +92,106 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __getitem__(self, key):
     return self.records[key]
 
-  def add_record_if_not_present_for(self, timestamp):
-    # If a user exists, then he has at least one record.
-    # Upon initialization, the record pointed to by self.record_ptr
-    #  has a timestamp greater than or equal to the minimum timestamp
-    #  across all records for all other users. Thus, upon initialization
-    #  we will be adding records before it.
-    
-    if self.record_ptr is None:
-      self.record_ptr = self.linked_list
+  def homogenizeTimeDeltas(self, start, end, delta, session):
+    current = self.linked_list
+    reference_record = current.record
+    c_datetime = current.record.datetime
+    for d in datetimerange(start, end+delta, delta):
+      #logger.debug("="*80)
+      #logger.debug("Current record ptr: {0}".format(current.record))
+      #logger.debug("Homogenized date time: {0}".format(d))
+      lower_bound = d-delta
+      upper_bound = d+delta
+      #logger.debug("Looking between window of {0} to {1}".format(lower_bound, upper_bound))
+      # Three possible states could be encountered.
+      #  1. The current record is within a window
+      #      surrounding d
+      #      e.g.  d-delta <= c.datetime < d+delta
+      if lower_bound < c_datetime <= upper_bound:
+        # Adjust the current element's datetime.
+        #logger.debug("Current record falls within window! Modifying...")
+        #logger.debug(current.record)
+        #logger.debug("... to ...")
+        current.record.datetime = d
+        current.record.date = d.date()
+        current.record.time = d.time()
+        #logger.debug(current.record)
+        #self.modified_records.append(current.record)
 
-    if self.record_ptr.record.datetime == timestamp:
-      # A record exists with the time. Nothing is needed.
-      self.record_ptr = self.record_ptr.next
-      return
+        # Move forward if possible
+        reference_record = current.record
+        if current.next is not None:
+          #logger.debug("Moving forward to {0}".format(current.next.record))
+          current = current.next
 
-    else:
-      if self.record_ptr.prev is None:
-        # Set synth'd record based on user's true initial location
-        reference_record = self.record_ptr.record
-
-      else:
-        # Set synth's record based on most recent user's location.
-        reference_record = self.record_ptr.prev.record
-
-      # A record does not exist for the given time. We need
-      #  to add it to the linked list. It will be a replication
-      #  of the current record_ptr.record, only the timing
-      #  data will be changed.
-      modified_record = GeoLifeRecord(
-        user=reference_record.user,
-        latitude=reference_record.latitude,
-        longitude=reference_record.longitude,
-        datetime=timestamp,
-        date=timestamp.date(),
-        time=timestamp.time(),
-        is_synthesized=True,
-      )
-      logger.debug("Synthesized record")
-      logger.debug("Base record:    {0}".format(reference_record))
-      logger.debug("Synth'd record: {0}".format(modified_record))
-      self.record_ptr.insertBefore(modified_record)
-      if self.record_ptr.prev.prev is None:
-        new_r = self.record_ptr.prev.record
-        curr = self.record_ptr.record
-        assert new_r.datetime < curr.datetime, "Record {0} was incorrected placed before {1}".format(
-          new_r,
-          curr,
-        )
+        #else:
+        #  logger.debug("Cannot move forward! current.next points to None.")
+        c_datetime = current.record.datetime
 
       else:
-        prev = self.record_ptr.prev.prev.record
-        new_r = self.record_ptr.prev.record
-        curr = self.record_ptr.record
-        assert prev.datetime < new_r.datetime < curr.datetime, "Record {0} was incorrected placed between {1} and {2}".format(
-          prev, new_r, curr,
+        #logger.debug("Current record falls outside window.")
+        #logger.debug("Generating a new record with current timestamp.")
+        #logger.debug("Base record: {0}".format(reference_record))
+        modified_record = GeoLifeRecord(
+          user=reference_record.user,
+          latitude=reference_record.latitude,
+          longitude=reference_record.longitude,
+          datetime=d,
+          date=d.date(),
+          time=d.time(),
+          is_synthesized=True,
         )
-      self.synthesized_records.append(modified_record)
+        #logger.debug("Modified record: {0}".format(modified_record))
+        self.synthesized_records.append(modified_record)
+
+        #  2. The current record is before this window
+        #      e.g.  c.datetime < d-delta
+        if c_datetime <= lower_bound:
+          #logger.debug("Current record is behind!")
+          #logger.debug("Modified record will be added after current")
+          #logger.debug("Current record: {0}".format(current.record))
+          #logger.debug("     .next := {0}".format(current.next))
+          #logger.debug("     .prev := {0}".format(current.prev))
+          current.insertAfter(modified_record)
+          current = current.next
+          c_datetime = current.record.datetime
+
+        #  3. The current record is after this window
+        #      e.g   d+delta <= c.datetime
+        elif upper_bound < c_datetime:
+          #logger.debug("Current record is ahead!")
+          #logger.debug("Modified record will be added before current")
+          #logger.debug("Current record: {0}".format(current.record))
+          #logger.debug("     .next := {0}".format(current.next))
+          #logger.debug("     .prev := {0}".format(current.prev))
+          current.insertBefore(modified_record)
+
+        else:
+          logger.error("Uh... something went wrong.")
+
+      if len(self.synthesized_records) > 10000:
+        self.__commit_synthesized_records(session)
+      #if len(self.modified_records) > 10000:
+      #  self.__commit_modified_records(session)
+
+    self.__commit_synthesized_records(session)
+    #self.__commit_modified_records(session)
+
+  def __commit_synthesized_records(self, session):
+    if self.synthesized_records:
+      logger.info("Adding synthesized records for {0}".format(self))
+      session.add_all(self.synthesized_records)
+      session.commit()
+      del self.synthesized_records[:]
+  """
+  def __commit_modified_records(self, session):
+    if self.modified_records:
+      logger.info("Updating modified records for {0}".format(self))
+      for r in self.modified_records:
+        stmt = update(GeoLifeRecord)\
+                 .where(GeoLifeRecord.c.id==r.record.id)\
+                 .values(datetime=r.datetime, date=r.date, time=r.time)
+  """
 
   def link_listify_records(self):
     logger.info("Link listifying {0}".format(self))
@@ -154,32 +200,44 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     # Have record_ptr point to the head of the linked list
     self.record_ptr = self.linked_list
 
-    # Let's verify that the ith element occurs before the ith.next element
-    current = self.record_ptr
-    while current.next is not None:
-      assert current.record.datetime < current.next.record.datetime, "{0} did not occur before {1}".format(current.record, current.next.record)
-      current = current.next
-
   def is_time_homogenized(self):
     logger.info("Verifying time homogenization for {0}".format(self))
-    self.record_ptr = self.linked_list
-    expected_delta = self.record_ptr.getTimeDeltaWithNextNode()
+    current = self.linked_list
+    expected_delta = current.getTimeDeltaWithNextNode()
 
-    while self.record_ptr.next.next is not None:
-      self.record_ptr = self.record_ptr.next
-      actual_delta = self.record_ptr.getTimeDeltaWithNextNode()
+    while current.next.next is not None:
+      current = current.next
+      actual_delta = current.getTimeDeltaWithNextNode()
 
       if expected_delta != actual_delta:
+        """
+        c = current
+        for i in range(5):
+          logger.debug(" "*80 + str(c.record))
+          logger.debug(" "*90 + "|   next")
+          logger.debug(" "*90 + "v")
+          c = c.next
+          if c is None:
+            break
+        logger.debug("#"*100)
+        c = current
+        for i in range(5):
+          logger.debug(" "*80 + str(c.record))
+          logger.debug(" "*90 + "|   prev")
+          logger.debug(" "*90 + "v")
+          c = c.prev
+          if c is None:
+            break
+        """
         logger.error("Following records do not have expected time delta of"
                      " {0}\n\t{1}\n\t{2}".format(
                        expected_delta,
-                       self.record_ptr.record,
-                       self.record_ptr.next.record
+                       current.record,
+                       current.next.record
         ))
+       
         return False
 
-    # Reset record pointer.
-    self.record_ptr = self.linked_list
     return True
 
   def getExtent(self):

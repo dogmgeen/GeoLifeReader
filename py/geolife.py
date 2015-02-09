@@ -8,10 +8,10 @@ from datetime import timedelta
 from record import GeoLifeRecord
 import user
 from stats import StatisticsCalculator
-from utils import datetimerange
 from one import ExternalMovementReaderConverter
 from sqlalchemy.sql import select
 import time
+from utils import datetimerange
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -70,7 +70,7 @@ class GeoLifeDataset:
     Session = sessionmaker()
     Session.configure(bind=self.engine)
     session = Session()
-    if True:
+    if False:
       logger.info("-"*50)
       logger.info("Database will be created and populated from files"
                   " in {0}".format(directory))
@@ -213,31 +213,10 @@ class GeoLifeDataset:
 
     print("#"*80)
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
-    for d in datetimerange(start, end+delta, delta):
-      logger.debug("-"*60)
-      logger.debug("Iterating through user records on {0}".format(d))
-      for u in self.users:
-        u.add_record_if_not_present_for(timestamp=d)
-        if len(u.synthesized_records) > 10000:
-          logger.info("Adding synthesized records for {0} to database".format(
-            u
-          ))
-          self.db_session.add_all(u.synthesized_records)
-          self.db_session.commit()
-          del u.synthesized_records[:]
-
-    # Verify time homogeneous time steps
     for u in self.users:
-      if u.synthesized_records:
-        self.db_session.add_all(u.synthesized_records)
-        self.db_session.commit()
-        del u.synthesized_records[:]
-
-      # Reset the pointer u.linked_list to point to the new head if one was
-      #  created.
+      u.homogenizeTimeDeltas(start, end, delta, self.db_session)
       u.verifyLinkListPointsToTrueHead()
       assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
-
     return self
 
   def convertToONE(self, to_file):

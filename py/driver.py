@@ -10,6 +10,9 @@ stdout.setLevel(logging.INFO)
 logger.addHandler(stdout)
 
 import geolife
+import sys
+sys.setrecursionlimit(100000)
+
 
 if __name__ == "__main__":
   try:
@@ -19,15 +22,13 @@ if __name__ == "__main__":
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
 
-    geolife.GeoLifeDataset(geolife_root_directory)#\
-    """
+    geolife.GeoLifeDataset(geolife_root_directory)\
            .onlyRetrieveSomeUsers(n=num_users)\
            .retrieveByDate(date=search_date)\
            .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)\
            .calculateStatistics()\
            .homogenizeTimeDeltas()\
            .convertToONE(to_file="geolife2one_{0}_{1}users.csv".format(search_date, num_users))
-    """
 
   except:
     logger.exception("Stuff didn't do")
