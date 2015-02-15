@@ -112,11 +112,7 @@ class GeoLifeDataset:
     # retrieve all unique user IDs present in the database
     s = select([GeoLifeRecord.user]).distinct()
     conn = self.engine.connect()
-    #result = conn.execute(s)
     user_ids = [r for r, in conn.execute(s)]
-    #for r, in result:
-    #  print("Unique user: {0}".format(r))
-    #result.close()
     logger.info("User IDs: {0}".format(user_ids))
 
     # obtain a subset of the users of size n
@@ -133,27 +129,27 @@ class GeoLifeDataset:
 
       assert len(selected_user_ids) == n, "Selected set of user IDs is not of size {0}, but of size {1}".format(n, len(selected_user_ids))
 
+      logger.info("Selected user IDs: {0}".format(selected_user_ids))
+      # Reduce result set such that only records that have a user in the subset
+      #  are present.
+      logger.debug("Before reducing by user ID: {0}".format(
+        self.result_set.count()
+      ))
+
+      self.result_set = self.result_set.filter(
+        GeoLifeRecord.user.in_(selected_user_ids)
+      )
+
+      logger.debug("After reducing by user ID: {0}".format(
+        self.result_set.count()
+      ))
+
     else:
       logger.warning("Only {0} users are present in the database. A subset of"
                      " size {1} will only include {0} users.".format(
                      len(user_ids), n
       ))
-      selected_user_ids = user_ids
 
-    logger.info("Selected user IDs: {0}".format(selected_user_ids))
-    # Reduce result set such that only records that have a user in the subset
-    #  are present.
-    logger.debug("Before reducing by user ID: {0}".format(
-      self.result_set.count()
-    ))
-
-    self.result_set = self.result_set.filter(
-      GeoLifeRecord.user.in_(selected_user_ids)
-    )
-
-    logger.debug("After reducing by user ID: {0}".format(
-      self.result_set.count()
-    ))
     return self
 
   def retrieveByDate(self, date):
