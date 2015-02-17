@@ -123,6 +123,38 @@ class LinkedRecords:
   def __str__(self):
     return str(self.record)
 
+  def removeSegmentEndingAt(self, ending_node):
+    if self == ending_node:
+      logger.warning("You almost deleted an incorrect node!")
+      return
+
+    # The ending point of the segment (last_node.next) should point to None
+    ending_node.prev.next = None
+
+    # Connect the nodes surrounding this segment.
+    ending_node.prev = self.prev
+    self.prev.next = ending_node
+
+    # The beginning point of the segment (first_node.prev) should point to None
+    self.prev = None
+    
+    # Only deleting one node.
+    #  i.e. self and ending_node are neighbors
+    if self.next is None:
+      self.record = None
+      return
+
+    else:
+    # Begin iterating and deleting.
+      current = self
+      while current.next is not None:
+        current.record = None
+        current = current.next
+        current.prev.next = None
+        current.prev = None
+
+      current.record = None
+
 
 def getExtent(x1, x2, y1, y2):
   return (min(x1, x2), max(x1, x2), min(y1, y2), max(y1, y2))

@@ -133,27 +133,27 @@ class GeoLifeDataset:
 
       assert len(selected_user_ids) == n, "Selected set of user IDs is not of size {0}, but of size {1}".format(n, len(selected_user_ids))
 
+      logger.info("Selected user IDs: {0}".format(selected_user_ids))
+      # Reduce result set such that only records that have a user in the subset
+      #  are present.
+      logger.debug("Before reducing by user ID: {0}".format(
+        self.result_set.count()
+      ))
+
+      self.result_set = self.result_set.filter(
+        GeoLifeRecord.user.in_(selected_user_ids)
+      )
+
+      logger.debug("After reducing by user ID: {0}".format(
+        self.result_set.count()
+      ))
+
     else:
       logger.warning("Only {0} users are present in the database. A subset of"
                      " size {1} will only include {0} users.".format(
                      len(user_ids), n
       ))
-      selected_user_ids = user_ids
 
-    logger.info("Selected user IDs: {0}".format(selected_user_ids))
-    # Reduce result set such that only records that have a user in the subset
-    #  are present.
-    logger.debug("Before reducing by user ID: {0}".format(
-      self.result_set.count()
-    ))
-
-    self.result_set = self.result_set.filter(
-      GeoLifeRecord.user.in_(selected_user_ids)
-    )
-
-    logger.debug("After reducing by user ID: {0}".format(
-      self.result_set.count()
-    ))
     return self
 
   def retrieveByDate(self, date):
@@ -207,14 +207,17 @@ class GeoLifeDataset:
     return self
 
   def homogenizeTimeDeltas(self, delta=None):
-    delta = self.statistics.min_time_delta
+    if delta is None:
+      self.delta = self.statistics.min_time_delta
+    else:
+      self.delta = delta
     start = self.statistics.min_time
     end = self.statistics.max_time
 
     print("#"*80)
     logger.info("Homogenizing time deltas to {0} seconds".format(delta))
     for u in self.users:
-      u.homogenizeTimeDeltas(start, end, delta, self.db_session)
+      u.homogenizeTimeDeltas(start, end, self.delta, self.db_session)
       u.verifyLinkListPointsToTrueHead()
       assert u.is_time_homogenized(), "User {0} is not time-homogenized!".format(u)
     return self
@@ -223,7 +226,6 @@ class GeoLifeDataset:
     logger.info("#"*80)
     logger.info("Converting GeoLife to ONE format")
     logger.info("================================")
-    delta = self.statistics.min_time_delta
     start = self.statistics.min_time
     end = self.statistics.max_time
     c = ExternalMovementReaderConverter(self.statistics, 90000)
@@ -239,7 +241,7 @@ class GeoLifeDataset:
         **c.getHeader()
       ))
 
-      for d in datetimerange(start, end+delta, delta):
+      for d in datetimerange(start, end+self.delta, self.delta):
         logger.debug("-"*40)
         logger.debug("Iterating through records on {0}".format(d))
         for u in self.users:
