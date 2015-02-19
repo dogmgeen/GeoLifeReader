@@ -109,13 +109,13 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       #      e.g.  d-delta <= c.datetime < d+delta
       if lower_bound < c_datetime < upper_bound:
         logger.debug("Current record falls within window! Modifying...")
-        if lower_bound < c_datetime < d:
+        if lower_bound < c_datetime <= d:
           logger.debug("Current record occurs within previous window. We must"
                        " delete all nodes except the one less than or equal to"
                        " {0}".format(d))
           # Find the most recent record that is closest to the target date d
           start = current
-          while current.next is not None and current.record.datetime < d:
+          while current.next is not None and current.record.datetime <= d:
             logger.debug("Delete {0}".format(current.record))
             current = current.next
           
