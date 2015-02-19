@@ -20,8 +20,9 @@ Session = sessionmaker()
 Session.configure(bind=engine)
 session = Session()
 
-results = session.query(GeoLifeRecord.date).distinct().order_by(GeoLifeRecord.date)
-
-for d, in results:
-    print(d)
+results = session.query(func.count(GeoLifeRecord.date), GeoLifeRecord.date)\
+                 .group_by(GeoLifeRecord.date).order_by(GeoLifeRecord.date)
+with open("date_histogram.csv", "w") as f:
+  for n, d in results:
+    f.write("{0};{1}\n".format(n, d))
 

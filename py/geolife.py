@@ -37,7 +37,7 @@ def get_num_files(directory):
   return n
 
 class GeoLifeDataset:
-  def __init__(self, directory):
+  def __init__(self, directory=None):
     """Perform a lazy load of the raw PLT files that are located somewhere
     in the provided directory. Code has been written to automatically locate
     these files, so the exact directory is not necessary. All that is required
@@ -70,7 +70,7 @@ class GeoLifeDataset:
     Session = sessionmaker()
     Session.configure(bind=self.engine)
     session = Session()
-    if False:
+    if directory is not None:
       logger.info("-"*50)
       logger.info("Database will be created and populated from files"
                   " in {0}".format(directory))
@@ -110,10 +110,21 @@ class GeoLifeDataset:
 
   def onlyRetrieveSomeUsers(self, n, randomize=False):
     # retrieve all unique user IDs present in the database
-    s = select([GeoLifeRecord.user]).distinct()
-    conn = self.engine.connect()
+    logger.info("Retrieving unique users from database.")
+    logger.info("At most {0} users will exist in the output dataset.".format(n))
+    if randomize:
+      logger.info("The set of users will be randomly selected")
+
+    else:
+      logger.info("The set of users will be 0, 1, 2, ...")
+
+    #s = select([GeoLifeRecord.user]).distinct()
+    #conn = self.engine.connect()
     #result = conn.execute(s)
-    user_ids = [r for r, in conn.execute(s)]
+    user_ids = set()
+    for r in self.result_set:
+      user_ids.add(r.user)
+
     #for r, in result:
     #  print("Unique user: {0}".format(r))
     #result.close()
@@ -128,6 +139,7 @@ class GeoLifeDataset:
         selected_user_ids = random.sample(user_ids, n)
 
       else:
+        user_ids = list(user_ids)
         user_ids.sort()
         selected_user_ids = user_ids[:n]
 
@@ -229,6 +241,7 @@ class GeoLifeDataset:
     start = self.statistics.min_time
     end = self.statistics.max_time
     c = ExternalMovementReaderConverter(self.statistics, 90000)
+    self.metadata = c.getHeader()
 
     with open(to_file, "w") as f:
       logger.info("Opening file {0}".format(to_file))

@@ -20,14 +20,14 @@ if __name__ == "__main__":
   start = time.time()
   try:
     sample_dir = "/home/djmvfb/Downloads/reduced/"#"/home/kp/Development/GeoLifeReader/sample/"
-    search_date = "2009-05-20"
+    search_date = "2010-05-20"
     num_users = 400
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
 
-    geolife.GeoLifeDataset(geolife_root_directory)\
-           .onlyRetrieveSomeUsers(n=num_users)\
+    geolife.GeoLifeDataset()\
            .retrieveByDate(date=search_date)\
+           .onlyRetrieveSomeUsers(n=num_users)\
            .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)\
            .calculateStatistics()\
            .homogenizeTimeDeltas(delta=timedelta(seconds=5))\
