@@ -97,41 +97,72 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     reference_record = current.record
     c_datetime = current.record.datetime
     for d in datetimerange(start, end+delta, delta):
-      #logger.debug("="*80)
-      #logger.debug("Current record ptr: {0}".format(current.record))
-      #logger.debug("Homogenized date time: {0}".format(d))
+      logger.debug("="*80)
+      logger.debug("Current record ptr: {0}".format(current.record))
+      logger.debug("Homogenized date time: {0}".format(d))
       lower_bound = d-delta
       upper_bound = d+delta
-      #logger.debug("Looking between window of {0} to {1}".format(lower_bound, upper_bound))
+      logger.debug("Looking between window of {0} to {1}".format(lower_bound, upper_bound))
       # Three possible states could be encountered.
       #  1. The current record is within a window
       #      surrounding d
       #      e.g.  d-delta <= c.datetime < d+delta
-      if lower_bound < c_datetime <= upper_bound:
+      if lower_bound < c_datetime < upper_bound:
+        logger.debug("Current record falls within window! Modifying...")
+        if lower_bound < c_datetime <= d:
+          logger.debug("Current record occurs within previous window. We must"
+                       " delete all nodes except the one less than or equal to"
+                       " {0}".format(d))
+          # Find the most recent record that is closest to the target date d
+          start = current
+          while current.next is not None and current.record.datetime <= d:
+            logger.debug("Delete {0}".format(current.record))
+            current = current.next
+          
+          if current.next is None:
+            pass
+
+          elif current.record.datetime == d:
+            pass
+
+          else:
+            logger.debug("Don't delete {0}!!!".format(current.record))
+            current = current.prev
+
+          # Remove all nodes between current (inclusive) and searcher (exclusive)
+          if start != current:
+            start.removeSegmentEndingAt(current)
+          start = None
+          logger.debug("Searching for record less than or equal to {0} found {1}".format(
+            d, current
+          ))
+
+        else:
+          logger.debug("Current record occurs within next window.")
+
         # Adjust the current element's datetime.
-        #logger.debug("Current record falls within window! Modifying...")
-        #logger.debug(current.record)
-        #logger.debug("... to ...")
+        logger.debug(current.record)
+        logger.debug("... to ...")
         current.record.datetime = d
         current.record.date = d.date()
         current.record.time = d.time()
-        #logger.debug(current.record)
+        logger.debug(current.record)
         #self.modified_records.append(current.record)
 
         # Move forward if possible
         reference_record = current.record
         if current.next is not None:
-          #logger.debug("Moving forward to {0}".format(current.next.record))
+          logger.debug("Moving forward to {0}".format(current.next.record))
           current = current.next
 
-        #else:
-        #  logger.debug("Cannot move forward! current.next points to None.")
+        else:
+          logger.debug("Cannot move forward! current.next points to None.")
         c_datetime = current.record.datetime
 
       else:
-        #logger.debug("Current record falls outside window.")
-        #logger.debug("Generating a new record with current timestamp.")
-        #logger.debug("Base record: {0}".format(reference_record))
+        logger.debug("Current record falls outside window.")
+        logger.debug("Generating a new record with current timestamp.")
+        logger.debug("Base record: {0}".format(reference_record))
         modified_record = GeoLifeRecord(
           user=reference_record.user,
           latitude=reference_record.latitude,
@@ -141,33 +172,43 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
           time=d.time(),
           is_synthesized=True,
         )
-        #logger.debug("Modified record: {0}".format(modified_record))
+        logger.debug("Modified record: {0}".format(modified_record))
         self.synthesized_records.append(modified_record)
 
         #  2. The current record is before this window
         #      e.g.  c.datetime < d-delta
         if c_datetime <= lower_bound:
-          #logger.debug("Current record is behind!")
-          #logger.debug("Modified record will be added after current")
-          #logger.debug("Current record: {0}".format(current.record))
-          #logger.debug("     .next := {0}".format(current.next))
-          #logger.debug("     .prev := {0}".format(current.prev))
+          logger.debug("Current record is behind!")
+          logger.debug("Modified record will be added after current")
+          logger.debug("Current record: {0}".format(current.record))
+          logger.debug("     .next := {0}".format(current.next))
+          logger.debug("     .prev := {0}".format(current.prev))
           current.insertAfter(modified_record)
           current = current.next
           c_datetime = current.record.datetime
 
         #  3. The current record is after this window
         #      e.g   d+delta <= c.datetime
-        elif upper_bound < c_datetime:
-          #logger.debug("Current record is ahead!")
-          #logger.debug("Modified record will be added before current")
-          #logger.debug("Current record: {0}".format(current.record))
-          #logger.debug("     .next := {0}".format(current.next))
-          #logger.debug("     .prev := {0}".format(current.prev))
+        elif upper_bound <= c_datetime:
+          logger.debug("Current record is ahead!")
+          logger.debug("Modified record will be added before current")
+          logger.debug("Current record: {0}".format(current.record))
+          logger.debug("     .next := {0}".format(current.next))
+          logger.debug("     .prev := {0}".format(current.prev))
           current.insertBefore(modified_record)
+
 
         else:
           logger.error("Uh... something went wrong.")
+
+      # Verify previous node is ahead of current node by delta
+      if current.prev.prev is not None:
+            assert (current.prev.record.datetime - current.prev.prev.record.datetime) == delta, "Previous record {0} is not {1} ahead of {2}".format(
+              current.prev.prev.record,
+              delta,
+              current.prev.record,
+            )
+
 
       if len(self.synthesized_records) > 10000:
         self.__commit_synthesized_records(session)
@@ -180,8 +221,8 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __commit_synthesized_records(self, session):
     if self.synthesized_records:
       logger.info("Adding synthesized records for {0}".format(self))
-      session.add_all(self.synthesized_records)
-      session.commit()
+      #session.add_all(self.synthesized_records)
+      #session.commit()
       del self.synthesized_records[:]
   """
   def __commit_modified_records(self, session):
