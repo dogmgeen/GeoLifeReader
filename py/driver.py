@@ -23,6 +23,7 @@ if __name__ == "__main__":
     sample_dir = "/home/djmvfb/Downloads/reduced/"#"/home/kp/Development/GeoLifeReader/sample/"
     search_date = "2010-05-20"
     num_users = 400
+    delta = timedelta(seconds=5)
     geolife_root_directory = geolife.find_geolife_root(sample_dir)
     num_messages = 8640
     logger.info("GeoLife root found at {0}".format(geolife_root_directory))
@@ -32,13 +33,13 @@ if __name__ == "__main__":
            .onlyRetrieveSomeUsers(n=num_users)\
            .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)\
            .calculateStatistics()\
-           .homogenizeTimeDeltas(delta=timedelta(seconds=5))\
+           .homogenizeTimeDeltas(delta=delta)\
            .convertToONE(to_file="geolife2one_{0}_{1}users.csv".format(search_date, num_users))
 
     user_ids = processor.user_ids
     duration = processor.metadata["maxTime"]
     msgs = messages.create(
-      n=num_messages, users=user_ids, duration=duration
+      n=num_messages, users=user_ids, duration=duration, delta=delta
     )
     msgs.convertToONE("/tmp/msgs.csv")
     msgs.createChitChatFiles()

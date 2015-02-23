@@ -3,7 +3,8 @@ import time
 import logging
 logger = logging.getLogger("geolife.messages")
 
-def create(n, users, duration, seed=None):
+def create(n, users, duration, delta, seed=None):
+  delta_seconds = delta.total_seconds()
   logger.info("Creating {0} messages".format(n))
   if seed is None:
     seed = time.time()
@@ -16,7 +17,7 @@ def create(n, users, duration, seed=None):
     sender, receiver = random.sample(users, 2)
 
     # Choose a time for the message to occur
-    timestamp = random.randrange(duration)
+    timestamp = random.randrange(0, duration, delta_seconds)
 
     msgs.add(Message(
       timestamp=timestamp,

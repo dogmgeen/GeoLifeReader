@@ -165,7 +165,11 @@ class GeoLifeDataset:
                      " size {1} will only include {0} users.".format(
                      len(user_ids), n
       ))
+      selected_user_ids = user_ids
 
+
+    # Store the user IDs.
+    self.user_ids = selected_user_ids
     return self
 
   def retrieveByDate(self, date):
