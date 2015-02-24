@@ -24,7 +24,7 @@ class ExternalMovementReaderConverter:
     """Convert record to a normalized string format."""
     return "{time} {id} {xPos} {yPos}".format(
       time=int((record.datetime - self.min_time).total_seconds()),
-      id=int(record.user),
+      id=record.node_address,
       xPos=int(self.scale*(record.longitude - self.min_x)),
       yPos=int(self.scale*(record.latitude - self.min_y))
     )
