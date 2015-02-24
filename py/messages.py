@@ -3,12 +3,13 @@ import time
 import logging
 logger = logging.getLogger("geolife.messages")
 
-def create(n, users, duration, delta, seed=None):
+def create(n, num_users, duration, delta, seed=None):
   delta_seconds = delta.total_seconds()
   logger.info("Creating {0} messages".format(n))
   if seed is None:
     seed = time.time()
   random.seed(seed)
+  users = range(num_users)
 
   # Create n messages
   msgs = Messages()
