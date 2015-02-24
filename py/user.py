@@ -292,6 +292,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     ))
     r = self.record_ptr.record
     self.record_ptr = self.record_ptr.next
+    r.node_address = self.address
     return r
 
   def verifyLinkListPointsToTrueHead(self):
@@ -301,17 +302,30 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     self.linked_list = head
     self.record_ptr = head
 
+  def setAddress(self, addr):
+    self.address = addr
 
-def from_Query(query):
+
+def from_Query(query, normalize_ids):
+  # The query provided may have user IDs that are not consecutive. For
+  #   instance, user IDs 3, 4, 9, 21, etc. If normalize_ids is True,
+  #   then these IDs will be mapped to consecutive IDs: 0, 1, 2, ...
+
   # Split up the results by user
   users = defaultdict(GeoLifeUserFromDB)
   for record in query:
     users[record.user].add(record)
 
   users_list = users.values()
+  i = 0
   for u in users_list:
-      u.sort()
-      u.link_listify_records()
+    u.sort()
+    u.link_listify_records()
+
+    if normalize_ids:
+      logger.info("{0} will have address {1}".format(u, i))
+      u.setAddress(i)
+      i += 1
 
   return users_list
 
