@@ -108,6 +108,32 @@ class GeoLifeDataset:
           logger.info(" "*100 + "ETA: {0}".format(eta_delta))
     return session
 
+  def removeUsersWithTooFewRecords(self, min_records=2):
+    logger.info("Removing users with fewer than {0} records".format(
+      min_records
+    ))
+
+    user_ids = self.getUniqueUsers()
+    n = len(user_ids)
+    logger.info("Before filtering, there are {0} users".format(n))
+    users_to_filter = []
+    for u in user_ids:
+      records = self.result_set.filter(GeoLifeRecord.user == u)
+      count = records.count()
+      if count < min_records:
+        logger.debug("User {0} only has {1} records. User will not"
+                     " be present in dataset.".format(u, count
+        ))
+        users_to_filter.append(u)
+
+    logger.info("After filtering, there will be {0} users".format(
+      n-len(users_to_filter)
+    ))
+    self.result_set = self.result_set.filter(
+      GeoLifeRecord.user.notin_(users_to_filter)
+    )
+    return self
+
   def onlyRetrieveSomeUsers(self, n, randomize=False):
     # retrieve all unique user IDs present in the database
     logger.info("Retrieving unique users from database.")
@@ -118,18 +144,8 @@ class GeoLifeDataset:
     else:
       logger.info("The set of users will be 0, 1, 2, ...")
 
-    #s = select([GeoLifeRecord.user]).distinct()
-    #conn = self.engine.connect()
-    #result = conn.execute(s)
-    user_ids = set()
-    for r in self.result_set:
-      user_ids.add(r.user)
-
-    #for r, in result:
-    #  print("Unique user: {0}".format(r))
-    #result.close()
-    logger.info("User IDs: {0}".format(user_ids))
-
+    user_ids = self.getUniqueUsers()
+ 
     # obtain a subset of the users of size n
     if len(user_ids) > n:
       if randomize:
@@ -167,16 +183,21 @@ class GeoLifeDataset:
       ))
       selected_user_ids = user_ids
 
-
-    # Store the user IDs.
-    self.user_ids = selected_user_ids
     return self
+
+  def getUniqueUsers(self):
+    user_ids = set()
+    for r in self.result_set:
+      user_ids.add(r.user)
+    logger.info("User IDs: {0}".format(user_ids))
+    return user_ids
 
   def retrieveByDate(self, date):
     logger.info("+"*80)
     logger.info("Reducing result set to those occuring on {0}".format(date))
     if isinstance(date, str):
       date = datetime.strptime(date, "%Y-%m-%d").date()
+
     logger.debug("Before removing by date: {0}".format(
       self.result_set.count()
     ))
@@ -215,7 +236,7 @@ class GeoLifeDataset:
     # It is assumed no further reductions on the dataset will be made.
     logger.info("+"*80)
     logger.info("Calculating statistics")
-    self.users = user.from_Query(self.result_set)
+    self.users = user.from_Query(self.result_set, normalize_ids=True)
     logger.info("Found {0} users in result set".format(len(self.users)))
 
     self.statistics = StatisticsCalculator(self.users)
