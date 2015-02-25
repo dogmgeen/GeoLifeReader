@@ -25,7 +25,7 @@ class GeoLifeRecord(Base):
   date = Column(Date)#, index=True)
   time = Column(Time)#, index=True)
   is_synthesized = Column(Boolean, default=False)
-  isoweekday = Column(SmallInteger)
+  weekday = Column(SmallInteger)
 
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(

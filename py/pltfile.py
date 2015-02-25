@@ -30,7 +30,7 @@ class GeoLifeFile:
           datetime=datetime,
           date=datetime.date(),
           time=datetime.time(),
-          isoweekday=datetime.date().isoweekday(),
+          weekday=datetime.date().weekday(),
         )
   
 
