@@ -10,6 +10,7 @@ from sqlalchemy import Date
 from sqlalchemy import Time
 from sqlalchemy import Sequence
 from sqlalchemy import Boolean
+from sqlalchemy import SmallInteger
 from datetime import timedelta
 from extent import RectangularExtent
 
@@ -24,6 +25,7 @@ class GeoLifeRecord(Base):
   date = Column(Date)#, index=True)
   time = Column(Time)#, index=True)
   is_synthesized = Column(Boolean, default=False)
+  isoweekday = Column(SmallInteger)
 
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
