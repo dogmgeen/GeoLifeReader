@@ -36,13 +36,19 @@ if __name__ == "__main__":
            .homogenizeTimeDeltas(delta=delta)\
            .convertToONE(to_file="geolife2one_{0}_{1}users.csv".format(search_date, num_users))
 
-    user_ids = processor.user_ids
+    num_users = len(processor.users)
     duration = processor.metadata["maxTime"]
     msgs = messages.create(
-      n=num_messages, users=user_ids, duration=duration, delta=delta
+      n=num_messages, num_users=num_users, duration=duration, delta=delta
     )
     msgs.convertToONE("/tmp/msgs.csv")
-    msgs.createChitChatFiles()
+    msgs.createChitChatFiles(
+      num_social_interests=2*num_users,
+      social_interests_per_user=5,
+      metadata_descriptors_per_msg=4,
+      social_interests_file="/tmp/social_interests.csv",
+      metadata_descriptors_file="/tmp/metadata.csv"
+    )
 
   except:
     logger.exception("Stuff didn't do")

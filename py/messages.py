@@ -2,6 +2,9 @@ import random
 import time
 import logging
 logger = logging.getLogger("geolife.messages")
+from chitchat import Message
+from chitchat import createUsers
+
 
 def create(n, num_users, duration, delta, seed=None):
   delta_seconds = delta.total_seconds()
@@ -12,7 +15,7 @@ def create(n, num_users, duration, delta, seed=None):
   users = range(num_users)
 
   # Create n messages
-  msgs = Messages()
+  msgs = Messages(user_addresses=users)
   for i in range(n):
     # Randomly select two users
     sender, receiver = random.sample(users, 2)
@@ -31,27 +34,10 @@ def create(n, num_users, duration, delta, seed=None):
   return msgs
 
 
-class Message:
-  def __init__(self, timestamp, sender, receiver, size):
-    self.timestamp = timestamp
-    self.sender = sender
-    self.receiver = receiver
-    self.size = size
-    self.id = None
-
-  def __str__(self):
-    return "{time} C {msgId} {sender} {receiver} {size}\n".format(
-      time=self.timestamp,
-      msgId=self.id,
-      sender=self.sender,
-      receiver=self.receiver,
-      size=self.size,
-    )
-
-
 class Messages:
-  def __init__(self):
+  def __init__(self, user_addresses):
     self.msgs = []
+    self.users = createUsers(user_addresses)
 
   def add(self, msg):
     self.msgs.append(msg)
@@ -67,5 +53,43 @@ class Messages:
       for m in self.msgs:
         f.write(str(m))
 
-  def createChitChatFiles(self):
-    pass
+  def createChitChatFiles(self,
+      num_social_interests,
+      social_interests_per_user,
+      metadata_descriptors_per_msg,
+      social_interests_file,
+      metadata_descriptors_file):
+    # Create social interests
+    logger.info("Creating {0} unique social interests".format(num_social_interests))
+    social_interests = range(num_social_interests)
+
+    # Assign social interests to users
+    for u in self.users:
+      u.setInterests(pool=social_interests, num=social_interests_per_user)
+
+    # Write social interest to file
+    logger.info("Writing social interests for {0} users to {1}".format(
+      len(self.users), social_interests_file
+    ))
+    with open(social_interests_file, "w") as f:
+      for u in self.users:
+        f.write("{0}\n".format(u))
+
+    # Create metadata descriptors for messages based on sender and receiver
+    for m in self.msgs:
+      sender_addr = m.sender
+      sender = self.users[sender_addr]
+
+      receiver_addr = m.receiver
+      receiver = self.users[receiver_addr]
+
+      m.setMetadataDescriptors(
+        sender_interests=sender.interests,
+        receiver_interests=receiver.interests,
+        num=metadata_descriptors_per_msg,
+      )
+
+    # Write out metadata descriptors to file
+    with open(metadata_descriptors_file, "w") as f:
+      for m in self.msgs:
+        f.write("{0}\n".format(m.toChitChat()))
