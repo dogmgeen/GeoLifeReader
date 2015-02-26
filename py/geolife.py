@@ -127,12 +127,17 @@ class GeoLifeDataset:
         ))
         users_to_filter.append(u)
 
-    logger.info("After filtering, there will be {0} users".format(
-      n-len(users_to_filter)
-    ))
-    self.result_set = self.result_set.filter(
-      GeoLifeRecord.user.notin_(users_to_filter)
-    )
+    if users_to_filter:
+      logger.info("After filtering, there will be {0} users".format(
+        n-len(users_to_filter)
+      ))
+      self.result_set = self.result_set.filter(
+        GeoLifeRecord.user.notin_(users_to_filter)
+      )
+
+    else:
+      logger.info("No users have fewer than {0} records".format(min_records))
+
     return self
 
   def onlyRetrieveSomeUsers(self, n, randomize=False):
