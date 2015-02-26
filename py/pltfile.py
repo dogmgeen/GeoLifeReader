@@ -28,20 +28,25 @@ class GeoLifeFile:
       reader = csv.DictReader(f, fieldnames=SCHEMA)
       for entry in reader:
         d = timestamp2datetime(entry)
-        datetime_suffix = d.strftime("%y%m%d")
+        datetime_suffix = d.strftime("%Y%m%d")
 
         new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
+        logger.debug("User {0} will be renamed {1}".format(
+          self.user, new_user_id
+        ))
+
         weekday = d.weekday()
         days_after_origin_date = datetime.timedelta(days=weekday)
         synthesized_date = origin_date + days_after_origin_date
         synthesized_datetime = datetime.datetime.combine(
           synthesized_date, d.time()
         )
+        logger.debug("Date {0} is synthesized to {1}".format(d, synthesized_datetime))
         yield GeoLifeRecord(
           user=new_user_id,
           latitude=entry["lat"],
           longitude=entry["long"],
-          datetime=synthesized_date,
+          datetime=synthesized_datetime,
           weekday=weekday,
         )
   
