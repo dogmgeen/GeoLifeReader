@@ -4,7 +4,7 @@ import os
 import pltfile
 from collections import defaultdict
 from record import LinkedRecords
-from record import GeoLifeRecord
+from record import WRecord as GeoLifeRecord
 from utils import datetimerange
 from sqlalchemy import update
 
@@ -168,9 +168,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
           latitude=reference_record.latitude,
           longitude=reference_record.longitude,
           datetime=d,
-          date=d.date(),
-          time=d.time(),
-          is_synthesized=True,
+          weekday=d.weekday(),
         )
         logger.debug("Modified record: {0}".format(modified_record))
         self.synthesized_records.append(modified_record)
@@ -224,15 +222,6 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       #session.add_all(self.synthesized_records)
       #session.commit()
       del self.synthesized_records[:]
-  """
-  def __commit_modified_records(self, session):
-    if self.modified_records:
-      logger.info("Updating modified records for {0}".format(self))
-      for r in self.modified_records:
-        stmt = update(GeoLifeRecord)\
-                 .where(GeoLifeRecord.c.id==r.record.id)\
-                 .values(datetime=r.datetime, date=r.date, time=r.time)
-  """
 
   def link_listify_records(self):
     logger.info("Link listifying {0}".format(self))
