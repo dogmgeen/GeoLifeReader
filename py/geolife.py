@@ -5,7 +5,8 @@ import sys
 import os
 from datetime import datetime
 from datetime import timedelta
-from record import GeoLifeRecord
+from record import WEEKDAY_STRINGS
+from record import WRecord as GeoLifeRecord
 import user
 from stats import StatisticsCalculator
 from one import ExternalMovementReaderConverter
@@ -192,11 +193,11 @@ class GeoLifeDataset:
     logger.info("User IDs: {0}".format(user_ids))
     return user_ids
 
-  def retrieveByDate(self, date):
+  def retrieveByWeekday(self, weekday):
     logger.info("+"*80)
-    logger.info("Reducing result set to those occuring on {0}".format(date))
-    if isinstance(date, str):
-      date = datetime.strptime(date, "%Y-%m-%d").date()
+    logger.info("Reducing result set to those occuring only on {0}".format(
+      WEEKDAY_STRINGS[weekday]
+    ))
 
     logger.debug("Before removing by date: {0}".format(
       self.result_set.count()
@@ -204,12 +205,11 @@ class GeoLifeDataset:
 
     #.with_hint(GeoLifeRecord, 'USE INDEX ix_records_date')\
     self.result_set = self.result_set\
-        .filter(GeoLifeRecord.date==date)\
+        .filter(GeoLifeRecord.weekday==weekday)\
         .order_by(GeoLifeRecord.datetime)
 
     logger.debug("After removing by date: {0}".format(self.result_set.count()))
     return self
-
 
   def boundByLocation(self, north=90., south=-90., east=180., west=-180.):
     logger.info("+"*80)
