@@ -3,9 +3,14 @@ logger = logging.getLogger("geolife.file")
 import os
 import csv
 from utils import timestamp2datetime
-from record import GeoLifeRecord
+#from record import GeoLifeRecord
+from record import WRecord as GeoLifeRecord
+import datetime
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
+
+origin_date = datetime.date(year=2013, month=5, day=20)
+
 
 
 class GeoLifeFile:
@@ -22,14 +27,22 @@ class GeoLifeFile:
 
       reader = csv.DictReader(f, fieldnames=SCHEMA)
       for entry in reader:
-        datetime = timestamp2datetime(entry)
+        d = timestamp2datetime(entry)
+        datetime_suffix = d.strftime("%y%m%d")
+
+        new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
+        weekday = d.weekday()
+        days_after_origin_date = datetime.timedelta(days=weekday)
+        synthesized_date = origin_date + days_after_origin_date
+        synthesized_datetime = datetime.datetime.combine(
+          synthesized_date, d.time()
+        )
         yield GeoLifeRecord(
-          user=self.user,
+          user=new_user_id,
           latitude=entry["lat"],
           longitude=entry["long"],
-          datetime=datetime,
-          date=datetime.date(),
-          time=datetime.time(),
+          datetime=synthesized_date,
+          weekday=weekday,
         )
   
 
