@@ -31,7 +31,15 @@ class GeoLifeRecord(Base):
       self.user, self.latitude, self.longitude,
       self.datetime
     )
-
+WEEKDAY_STRINGS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+]
 
 class WRecord(Base):
   __tablename__ = "beep"
@@ -41,6 +49,15 @@ class WRecord(Base):
   longitude = Column(Float)
   datetime = Column(DateTime)#, index=True)
   weekday = Column(SmallInteger)
+
+  MONDAY = 0
+  TUESDAY = 1
+  WEDNESDAY = 2
+  THURSDAY = 3
+  FRIDAY = 4
+  SATURDAY = 5
+  SUNDAY = 6
+  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
 
   def __repr__(self):
     return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
