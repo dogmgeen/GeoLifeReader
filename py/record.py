@@ -10,6 +10,7 @@ from sqlalchemy import Date
 from sqlalchemy import Time
 from sqlalchemy import Sequence
 from sqlalchemy import Boolean
+from sqlalchemy import SmallInteger
 from datetime import timedelta
 from extent import RectangularExtent
 
@@ -27,6 +28,22 @@ class GeoLifeRecord(Base):
 
   def __repr__(self):
     return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
+      self.user, self.latitude, self.longitude,
+      self.datetime
+    )
+
+
+class WRecord(Base):
+  __tablename__ = "beep"
+  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+  user = Column(Integer)#, index=True)
+  latitude = Column(Float)
+  longitude = Column(Float)
+  datetime = Column(DateTime)#, index=True)
+  weekday = Column(SmallInteger)
+
+  def __repr__(self):
+    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
       self.user, self.latitude, self.longitude,
       self.datetime
     )
