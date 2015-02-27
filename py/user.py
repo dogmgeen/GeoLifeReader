@@ -47,13 +47,6 @@ class GeoLifeUserFromFile(BaseGeoLifeUser):
       user=self
     )
 
-  def __iter__(self):
-    for f in self.files:
-      logger.debug("Reading from file {0}".format(os.path.basename(f.url)))
-      for r in f:
-        yield r
-
-
 def from_directory(directory):
   users = []
   for d in os.listdir(directory):

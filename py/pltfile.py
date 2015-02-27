@@ -6,6 +6,8 @@ from utils import timestamp2datetime
 #from record import GeoLifeRecord
 from record import WRecord as GeoLifeRecord
 import datetime
+from collections import defaultdict
+import numpy
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
 
@@ -18,6 +20,7 @@ class GeoLifeFile:
     logger.debug("Initializing GeoLifeFile at {0}".format(url))
     self.user = user.id
     self.url = url
+    self.weekday_counts = defaultdict(lambda: numpy.zeros(7))
 
   def __iter__(self):
     with open(self.url) as f:
@@ -36,6 +39,8 @@ class GeoLifeFile:
         ))
 
         weekday = d.weekday()
+        self.weekday_counts[new_user_id][weekday] += 1
+
         days_after_origin_date = datetime.timedelta(days=weekday)
         synthesized_date = origin_date + days_after_origin_date
         synthesized_datetime = datetime.datetime.combine(

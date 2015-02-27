@@ -7,12 +7,16 @@ from datetime import datetime
 from datetime import timedelta
 from record import WEEKDAY_STRINGS
 from record import WRecord as GeoLifeRecord
+from record import GeoLifeUserCountPerDay
 import user
 from stats import StatisticsCalculator
 from one import ExternalMovementReaderConverter
 from sqlalchemy.sql import select
 import time
 from utils import datetimerange
+from collections import defaultdict
+import numpy
+
 
 def find_geolife_root(directory_to_search):
   directory_containing_plt = None
@@ -83,6 +87,7 @@ class GeoLifeDataset:
       i = 0
       avg = 0
 
+      user_weekday_counts = defaultdict(lambda: numpy.zeros(7))
       for u in user.from_directory(directory):
         logger.info("Beginning yielding of records from user {0.id}".format(u))
         for f in u.files:
@@ -98,6 +103,16 @@ class GeoLifeDataset:
           session.add_all(f)
           session.commit()
 
+          # Now that this file has been read, the user-date-file information
+          #  has been populated.
+          synthesized_users_in_file = 0
+          for user_id in f.weekday_counts:
+            user_weekday_counts[user_id] += f.weekday_counts[user_id]
+            synthesized_users_in_file += 1
+          logger.info("File {0} has {1} synthesized users, who will be summarized in db".format(
+            os.path.basename(f.url), synthesized_users_in_file
+          ))
+
           duration = datetime.now() - start
           avg = (duration.total_seconds() + i*avg)/(i+1)
           eta = avg*(n-i)
@@ -107,6 +122,21 @@ class GeoLifeDataset:
             os.path.basename(f.url), duration, average
           ))
           logger.info(" "*100 + "ETA: {0}".format(eta_delta))
+
+      # Store the user-date-count information.
+      user_weekday_counts_db = []
+      for user_id in user_weekday_counts:
+        weekday_counts = user_weekday_counts[user_id]
+        for d in range(len(weekday_counts)):
+          user_weekday_counts_db.append(GeoLifeUserCountPerDay(
+            user=user_id,
+            weekday=d,
+            count=weekday_counts[d],
+          ))
+
+      session.add_all(user_weekday_counts_db)
+      session.commit()
+
     return session
 
   def removeUsersWithTooFewRecords(self, min_records=2):
@@ -119,6 +149,7 @@ class GeoLifeDataset:
     logger.info("Before filtering, there are {0} users".format(n))
     users_to_filter = []
     for u in user_ids:
+      logger.info("Analyzing records for user {0}".format(u))
       records = self.result_set.filter(GeoLifeRecord.user == u)
       count = records.count()
       if count < min_records:
@@ -126,6 +157,8 @@ class GeoLifeDataset:
                      " be present in dataset.".format(u, count
         ))
         users_to_filter.append(u)
+      else:
+        logger.info("Passed")
 
     if users_to_filter:
       logger.info("After filtering, there will be {0} users".format(
@@ -170,7 +203,7 @@ class GeoLifeDataset:
       logger.info("Selected user IDs: {0}".format(selected_user_ids))
       # Reduce result set such that only records that have a user in the subset
       #  are present.
-      logger.debug("Before reducing by user ID: {0}".format(
+      logger.info("Before reducing by user ID: {0}".format(
         self.result_set.count()
       ))
 
@@ -178,16 +211,16 @@ class GeoLifeDataset:
         GeoLifeRecord.user.in_(selected_user_ids)
       )
 
-      logger.debug("After reducing by user ID: {0}".format(
+      logger.info("After reducing by user ID: {0}".format(
         self.result_set.count()
       ))
 
     else:
-      logger.warning("Only {0} users are present in the database. A subset of"
-                     " size {1} will only include {0} users.".format(
+      logger.warning("No shrinking of user set necessary. Only {0} users are"
+                     " present in the database. A subset of size {1} will"
+                     " only include {0} users.".format(
                      len(user_ids), n
       ))
-      selected_user_ids = user_ids
 
     return self
 
@@ -195,7 +228,8 @@ class GeoLifeDataset:
     user_ids = set()
     for r in self.result_set:
       user_ids.add(r.user)
-    logger.info("User IDs: {0}".format(user_ids))
+    logger.info("Number of User IDs: {0}".format(len(user_ids)))
+    logger.debug(user_ids)
     return user_ids
 
   def retrieveByWeekday(self, weekday):
@@ -204,7 +238,7 @@ class GeoLifeDataset:
       WEEKDAY_STRINGS[weekday]
     ))
 
-    logger.debug("Before removing by date: {0}".format(
+    logger.info("Before removing by date: {0}".format(
       self.result_set.count()
     ))
 
@@ -213,14 +247,14 @@ class GeoLifeDataset:
         .filter(GeoLifeRecord.weekday==weekday)\
         .order_by(GeoLifeRecord.datetime)
 
-    logger.debug("After removing by date: {0}".format(self.result_set.count()))
+    logger.info("After removing by date: {0}".format(self.result_set.count()))
     return self
 
   def boundByLocation(self, north=90., south=-90., east=180., west=-180.):
     logger.info("+"*80)
     logger.info("Reducing result set to within ({west}, {north}) and"
                 " ({east}, {south})".format(**locals()))
-    logger.debug("Before removing by location: {0}".format(
+    logger.info("Before removing by location: {0}".format(
       self.result_set.count()
     ))
 
@@ -231,7 +265,7 @@ class GeoLifeDataset:
       GeoLifeRecord.longitude > west
     ).order_by(GeoLifeRecord.datetime)
 
-    logger.debug("After removing by location: {0}".format(
+    logger.info("After removing by location: {0}".format(
       self.result_set.count()
     ))
     return self

@@ -14,23 +14,6 @@ from sqlalchemy import SmallInteger
 from datetime import timedelta
 from extent import RectangularExtent
 
-Base = declarative_base()
-class GeoLifeRecord(Base):
-  __tablename__ = "records"
-  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer)#, index=True)
-  latitude = Column(Float)
-  longitude = Column(Float)
-  datetime = Column(DateTime)#, index=True)
-  date = Column(Date)#, index=True)
-  time = Column(Time)#, index=True)
-  is_synthesized = Column(Boolean, default=False)
-
-  def __repr__(self):
-    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
-      self.user, self.latitude, self.longitude,
-      self.datetime
-    )
 WEEKDAY_STRINGS = [
   "Monday",
   "Tuesday",
@@ -41,8 +24,9 @@ WEEKDAY_STRINGS = [
   "Sunday",
 ]
 
+Base = declarative_base()
 class WRecord(Base):
-  __tablename__ = "beep"
+  __tablename__ = "records"
   id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
   user = Column(Integer)#, index=True)
   latitude = Column(Float)
@@ -64,6 +48,13 @@ class WRecord(Base):
       self.user, self.latitude, self.longitude,
       self.datetime
     )
+
+class GeoLifeUserCountPerDay(Base):
+  __tablename__ = "user_weekday_count"
+  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+  user = Column(Integer)#, index=True)
+  weekday = Column(SmallInteger)
+  count = Column(Integer)
 
 
 def initialize_table(engine):
