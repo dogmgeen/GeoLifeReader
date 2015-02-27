@@ -3,6 +3,7 @@ logger = logging.getLogger("geolife.record")
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import BigInteger
 from sqlalchemy import String
 from sqlalchemy import Float
 from sqlalchemy import DateTime
@@ -28,7 +29,7 @@ Base = declarative_base()
 class WRecord(Base):
   __tablename__ = "records"
   id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer)#, index=True)
+  user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
   datetime = Column(DateTime)#, index=True)
@@ -51,9 +52,7 @@ class WRecord(Base):
 
 class GeoLifeUserCountPerDay(Base):
   __tablename__ = "user_weekday_count"
-  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer)#, index=True)
-  weekday = Column(SmallInteger)
+  id = Column(BigInteger, primary_key=True)
   count = Column(Integer)
 
 

@@ -15,7 +15,6 @@ from sqlalchemy.sql import select
 import time
 from utils import datetimerange
 from collections import defaultdict
-import numpy
 
 
 def find_geolife_root(directory_to_search):
@@ -87,7 +86,7 @@ class GeoLifeDataset:
       i = 0
       avg = 0
 
-      user_weekday_counts = defaultdict(lambda: numpy.zeros(7))
+      user_weekday_counts = defaultdict(int)
       for u in user.from_directory(directory):
         logger.info("Beginning yielding of records from user {0.id}".format(u))
         for f in u.files:
@@ -127,19 +126,17 @@ class GeoLifeDataset:
       user_weekday_counts_db = []
       for user_id in user_weekday_counts:
         weekday_counts = user_weekday_counts[user_id]
-        for d in range(len(weekday_counts)):
-          user_weekday_counts_db.append(GeoLifeUserCountPerDay(
-            user=user_id,
-            weekday=d,
-            count=weekday_counts[d],
-          ))
+        user_weekday_counts_db.append(GeoLifeUserCountPerDay(
+            id=user_id,
+            count=weekday_counts,
+        ))
 
       session.add_all(user_weekday_counts_db)
       session.commit()
 
     return session
 
-  def removeUsersWithTooFewRecords(self, min_records=2):
+  def removeUsersWithTooFewRecords(self, weekday=0, min_records=2):
     logger.info("Removing users with fewer than {0} records".format(
       min_records
     ))
@@ -150,13 +147,15 @@ class GeoLifeDataset:
     users_to_filter = []
     for u in user_ids:
       logger.info("Analyzing records for user {0}".format(u))
-      records = self.result_set.filter(GeoLifeRecord.user == u)
-      count = records.count()
+      count = self.db_session.query(GeoLifeUserCountPerDay.count)\
+                  .filter_by(id=u).scalar()
+      logger.info("User {0} has {1} records".format(u, count))
       if count < min_records:
         logger.debug("User {0} only has {1} records. User will not"
                      " be present in dataset.".format(u, count
         ))
         users_to_filter.append(u)
+
       else:
         logger.info("Passed")
 
@@ -198,7 +197,10 @@ class GeoLifeDataset:
         user_ids.sort()
         selected_user_ids = user_ids[:n]
 
-      assert len(selected_user_ids) == n, "Selected set of user IDs is not of size {0}, but of size {1}".format(n, len(selected_user_ids))
+      assert len(selected_user_ids) == n, (
+        "Selected set of user IDs is not of size {0}, but of size {1}".format(
+          n, len(selected_user_ids
+      )))
 
       logger.info("Selected user IDs: {0}".format(selected_user_ids))
       # Reduce result set such that only records that have a user in the subset
