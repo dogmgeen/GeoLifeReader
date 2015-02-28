@@ -14,6 +14,7 @@ from one import ExternalMovementReaderConverter
 from sqlalchemy.sql import select
 import time
 from utils import datetimerange
+from utils import ETACalculator
 from collections import defaultdict
 
 
@@ -55,6 +56,8 @@ class GeoLifeDataset:
     self.db_session = self.__load_db(directory)
     self.result_set = self.db_session.query(GeoLifeRecord)
     
+  def close(self):
+    self.db_session.close()
 
   def __load_db(self, directory):
     """Load a database session corresponding to the data within the provided
@@ -82,10 +85,7 @@ class GeoLifeDataset:
       record.initialize_table(self.engine)
       logger.info("Table initialized")
 
-      n = get_num_files(directory)
-      i = 0
-      avg = 0
-
+      timer = ETACalculator(iterations=get_num_files(directory))
       user_weekday_counts = defaultdict(int)
       for u in user.from_directory(directory):
         logger.info("Beginning yielding of records from user {0.id}".format(u))
@@ -97,7 +97,6 @@ class GeoLifeDataset:
             os.path.basename(f.url),
             i, n
           ))
-          start = datetime.now()
 
           session.add_all(f)
           session.commit()
@@ -112,15 +111,10 @@ class GeoLifeDataset:
             os.path.basename(f.url), synthesized_users_in_file
           ))
 
-          duration = datetime.now() - start
-          avg = (duration.total_seconds() + i*avg)/(i+1)
-          eta = avg*(n-i)
-          average = timedelta(seconds=avg)
-          eta_delta = timedelta(seconds=int(eta))
-          logger.info("File {0} took {1} seconds (average: {2})".format(
-            os.path.basename(f.url), duration, average
-          ))
-          logger.info(" "*100 + "ETA: {0}".format(eta_delta))
+          timer.checkpoint()
+          logger.info("="*60)
+          logger.info("File {0}".format(os.path.basename(f.url)))
+          logger.info(timer.eta())
 
       # Store the user-date-count information.
       user_weekday_counts_db = []
@@ -326,6 +320,7 @@ class GeoLifeDataset:
         for u in self.users:
           logger.debug("Writing all records from {0} at {1}".format(u, d))
           f.write("{0}\n".format(c(u.getRecordOn(timestamp=d))))
+    return self
 
 
 def load_from_directory(directory):
