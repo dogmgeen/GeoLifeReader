@@ -66,9 +66,9 @@ class GeoLifeDataset:
     from sqlalchemy import create_engine
     self.engine = create_engine(
       "{dialect}://{username}:{password}@{host}/{database}".format(
-      dialect='mysql',
-      username='kp',
-      password='nope',
+      dialect='postgresql+psycopg2',
+      username='postgres',
+      password='nope27rola',
       host='localhost',
       database='geolife'
     ))
@@ -90,14 +90,6 @@ class GeoLifeDataset:
       for u in user.from_directory(directory):
         logger.info("Beginning yielding of records from user {0.id}".format(u))
         for f in u.files:
-          i += 1
-          logger.info("{0:.4%} complete! Reading from file {1}"
-                      " ({2} out of {3} files)".format(
-            float(i)/n,
-            os.path.basename(f.url),
-            i, n
-          ))
-
           session.add_all(f)
           session.commit()
 

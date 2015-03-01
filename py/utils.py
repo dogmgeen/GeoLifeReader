@@ -28,13 +28,13 @@ class ETACalculator:
     self.start = datetime.now()
     self.avg = 0
 
-  def start(self):
+  def init(self):
     self.start = datetime.now()
 
   def checkpoint(self):
     duration = datetime.now() - self.start
     self.avg = (duration.total_seconds() + self.i*self.avg)/(self.i+1)
-    self.start()
+    self.init()
     self.i += 1
 
   def eta(self):
