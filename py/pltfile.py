@@ -3,9 +3,15 @@ logger = logging.getLogger("geolife.file")
 import os
 import csv
 from utils import timestamp2datetime
-from record import GeoLifeRecord
+#from record import GeoLifeRecord
+from record import WRecord as GeoLifeRecord
+import datetime
+from collections import defaultdict
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
+
+origin_date = datetime.date(year=2013, month=5, day=20)
+
 
 
 class GeoLifeFile:
@@ -13,6 +19,7 @@ class GeoLifeFile:
     logger.debug("Initializing GeoLifeFile at {0}".format(url))
     self.user = user.id
     self.url = url
+    self.weekday_counts = defaultdict(int)
 
   def __iter__(self):
     with open(self.url) as f:
@@ -22,15 +29,29 @@ class GeoLifeFile:
 
       reader = csv.DictReader(f, fieldnames=SCHEMA)
       for entry in reader:
-        datetime = timestamp2datetime(entry)
+        d = timestamp2datetime(entry)
+        datetime_suffix = d.strftime("%Y%m%d")
+
+        new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
+        logger.debug("User {0} will be renamed {1}".format(
+          self.user, new_user_id
+        ))
+
+        self.weekday_counts[new_user_id] += 1
+
+        weekday = d.weekday()
+        days_after_origin_date = datetime.timedelta(days=weekday)
+        synthesized_date = origin_date + days_after_origin_date
+        synthesized_datetime = datetime.datetime.combine(
+          synthesized_date, d.time()
+        )
+        logger.debug("Date {0} is synthesized to {1}".format(d, synthesized_datetime))
         yield GeoLifeRecord(
-          user=self.user,
+          user=new_user_id,
           latitude=entry["lat"],
           longitude=entry["long"],
-          datetime=datetime,
-          date=datetime.date(),
-          time=datetime.time(),
-          isoweekday=datetime.date().isoweekday(),
+          datetime=synthesized_datetime,
+          weekday=weekday,
         )
   
 

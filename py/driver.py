@@ -14,27 +14,25 @@ import messages
 import sys
 from datetime import timedelta
 sys.setrecursionlimit(100000)
+from record import WRecord
 
 import time
 
 if __name__ == "__main__":
   start = time.time()
   try:
-    sample_dir = "/home/djmvfb/Downloads/reduced/"#"/home/kp/Development/GeoLifeReader/sample/"
-    search_date = "2010-05-20"
-    num_users = 400
+    num_users = 6
+    weekday = "MONDAY"
     delta = timedelta(seconds=5)
-    geolife_root_directory = geolife.find_geolife_root(sample_dir)
     num_messages = 8640
-    logger.info("GeoLife root found at {0}".format(geolife_root_directory))
 
     processor = geolife.GeoLifeDataset()
-    processor.retrieveByDate(date=search_date)\
-           .onlyRetrieveSomeUsers(n=num_users)\
+    processor.retrieveByWeekday(weekday=getattr(WRecord, weekday))\
+           .onlyRetrieveSomeUsers(n=num_users, randomize=True)\
            .boundByLocation(north=53.567732, south=18.126, east=122.6, west=73.4)\
            .calculateStatistics()\
            .homogenizeTimeDeltas(delta=delta)\
-           .convertToONE(to_file="geolife2one_{0}_{1}users.csv".format(search_date, num_users))
+           .convertToONE(to_file="geolife2one_{0}_{1}users.csv".format(weekday, num_users))
 
     num_users = len(processor.users)
     duration = processor.metadata["maxTime"]

@@ -3,6 +3,7 @@ logger = logging.getLogger("geolife.record")
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import BigInteger
 from sqlalchemy import String
 from sqlalchemy import Float
 from sqlalchemy import DateTime
@@ -14,24 +15,45 @@ from sqlalchemy import SmallInteger
 from datetime import timedelta
 from extent import RectangularExtent
 
+WEEKDAY_STRINGS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+]
+
 Base = declarative_base()
-class GeoLifeRecord(Base):
+class WRecord(Base):
   __tablename__ = "records"
   id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer)#, index=True)
+  user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
   datetime = Column(DateTime)#, index=True)
-  date = Column(Date)#, index=True)
-  time = Column(Time)#, index=True)
-  is_synthesized = Column(Boolean, default=False)
-  isoweekday = Column(SmallInteger)
+  weekday = Column(SmallInteger)
+
+  MONDAY = 0
+  TUESDAY = 1
+  WEDNESDAY = 2
+  THURSDAY = 3
+  FRIDAY = 4
+  SATURDAY = 5
+  SUNDAY = 6
+  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
 
   def __repr__(self):
-    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
+    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
       self.user, self.latitude, self.longitude,
       self.datetime
     )
+
+class GeoLifeUserCountPerDay(Base):
+  __tablename__ = "user_weekday_count"
+  id = Column(BigInteger, primary_key=True)
+  count = Column(Integer)
 
 
 def initialize_table(engine):
