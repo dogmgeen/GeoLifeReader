@@ -166,7 +166,10 @@ class GeoLifeDataset:
 
     return self
 
-  def onlyRetrieveSomeUsers(self, n, randomize=False):
+  def onlyRetrieveSomeUsers(self, n=None, randomize=False):
+    if n is None:
+      return self
+
     # retrieve all unique user IDs present in the database
     logger.info("Retrieving unique users from database.")
     logger.info("At most {0} users will exist in the output dataset.".format(n))
@@ -315,10 +318,10 @@ class GeoLifeDataset:
       ))
 
       for d in datetimerange(start, end+self.delta, self.delta):
-        logger.debug("-"*40)
-        logger.debug("Iterating through records on {0}".format(d))
+        #logger.debug("-"*40)
+        #logger.debug("Iterating through records on {0}".format(d))
         for u in self.users:
-          logger.debug("Writing all records from {0} at {1}".format(u, d))
+          #logger.debug("Writing all records from {0} at {1}".format(u, d))
           f.write("{0}\n".format(c(u.getRecordOn(timestamp=d))))
     return self
 
