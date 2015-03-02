@@ -98,28 +98,6 @@ class LinkedRecords:
         )
       logger.debug("Finished setting up extents") 
 
-  def getMinTimeDelta(self, current_min=timedelta.max):
-    """Assume there is at least one more element in front of the current
-    element."""
-    delta = self.next.record.datetime - self.record.datetime
-    if delta < current_min:
-      logger.info(
-        "User #{0} has new smaller time delta ({1}) found between"
-        "\n\t{2} and\n\t{3}".format(
-        self.record.user,
-        delta,
-        self.record,
-        self.next.record,
-      ))
-      current_min = delta
-
-    if self.next.next is None:
-      return current_min
-
-    else:
-      return self.next.getMinTimeDelta(current_min=current_min)
-
-
   def insertBefore(self, record):
     n = LinkedRecords()
     n.next = self

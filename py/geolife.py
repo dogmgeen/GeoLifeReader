@@ -273,11 +273,8 @@ class GeoLifeDataset:
     self.statistics.run()
     return self
 
-  def homogenizeTimeDeltas(self, delta=None):
-    if delta is None:
-      self.delta = self.statistics.min_time_delta
-    else:
-      self.delta = delta
+  def homogenizeTimeDeltas(self, delta):
+    self.delta = delta
     start = self.statistics.min_time
     end = self.statistics.max_time
 
