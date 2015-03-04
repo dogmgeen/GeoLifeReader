@@ -5,14 +5,9 @@ import csv
 from utils import timestamp2datetime
 #from record import GeoLifeRecord
 from record import WRecord as GeoLifeRecord
-import datetime
 from collections import defaultdict
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
-
-origin_date = datetime.date(year=2013, month=5, day=20)
-
-
 
 class GeoLifeFile:
   def __init__(self, url, user):
@@ -38,20 +33,12 @@ class GeoLifeFile:
         ))
 
         self.weekday_counts[new_user_id] += 1
-
-        weekday = d.weekday()
-        days_after_origin_date = datetime.timedelta(days=weekday)
-        synthesized_date = origin_date + days_after_origin_date
-        synthesized_datetime = datetime.datetime.combine(
-          synthesized_date, d.time()
-        )
-        logger.debug("Date {0} is synthesized to {1}".format(d, synthesized_datetime))
         yield GeoLifeRecord(
           user=new_user_id,
           latitude=entry["lat"],
           longitude=entry["long"],
-          datetime=synthesized_datetime,
-          weekday=weekday,
+          time=d.time(),
+          weekday=d.weekday(),
         )
   
 

@@ -85,7 +85,7 @@ if __name__ == "__main__":
   user_weekday_counts_db = []
   for user_id in user_weekday_counts:
         weekday_counts = user_weekday_counts[user_id]
-        user_weekday_counts_db.append(record.GeoLifeUserCountPerDay(
+        user_weekday_counts_db.append(record.GeoLifeUser(
             id=user_id,
             count=weekday_counts,
         ))
