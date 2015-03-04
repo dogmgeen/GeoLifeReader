@@ -22,6 +22,17 @@ def datetimerange(start, end, step=timedelta(seconds=1)):
     yield element
     element += step
 
+def timerange(start, end, step=timedelta(seconds=1)):
+  dummy_date = datetime.now().date()
+  start_date = datetime.combine(dummy_date, start)
+  end_date = datetime.combine(dummy_date, end)
+  
+  element = start_date
+  while element < end_date:
+    yield element.time()
+    element += step
+  
+
 class ETACalculator:
   def __init__(self, iterations):
     self.n = iterations

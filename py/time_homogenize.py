@@ -10,7 +10,7 @@ from sqlalchemy import Sequence
 from sqlalchemy import SmallInteger
 from datetime import timedelta
 from datetime import time
-from utils import datetimerange
+from utils import timerange
 from raw.record import GeoLifeUser
 
 WEEKDAY_STRINGS = [
@@ -63,7 +63,7 @@ engine = create_engine(
   "{dialect}://{username}:{password}@{host}/{database}".format(
   dialect='postgresql+psycopg2',
   username='postgres',
-  password='nope27rola',
+  password='nope',
   host='localhost',
   database='geolife'
 ))
@@ -82,15 +82,15 @@ def get_users_present_on(weekday):
   session.close()
   return users
 
-
+delta = timedelta(seconds=5)
 if __name__ == "__main__":
   for weekday in HomogenizedRecord.WEEKDAYS:
     users = get_users_present_on(weekday)
-    print(users)
     users_present = []
     homogenized_records = []
-    """
-    for t in datetimerange(time.min, tim.max, delta):
+    for t in timerange(time.min, time.max, delta):
+      print(t)
+      """
       records = SELECT * FROM records
               WHERE datetime in (t, t+delta)
       for r in records:
@@ -108,4 +108,4 @@ if __name__ == "__main__":
 
       del users_present[:]
       del homogenized_records[:]
-    """
+      """
