@@ -83,11 +83,13 @@ if __name__ == "__main__":
 
   # Store the user-date-count information.
   user_weekday_counts_db = []
-  for user_id in user_weekday_counts:
-        weekday_counts = user_weekday_counts[user_id]
+  for key in user_weekday_counts:
+        weekday_counts = user_weekday_counts[key]
+        user_id, weekday = key
         user_weekday_counts_db.append(record.GeoLifeUser(
             id=user_id,
             count=weekday_counts,
+            weekday=weekday,
         ))
 
   session.add_all(user_weekday_counts_db)

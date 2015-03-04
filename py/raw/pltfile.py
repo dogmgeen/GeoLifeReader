@@ -28,11 +28,12 @@ class GeoLifeFile:
         datetime_suffix = d.strftime("%Y%m%d")
 
         new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
+        key = (new_user_id, d.weekday())
         logger.debug("User {0} will be renamed {1}".format(
           self.user, new_user_id
         ))
 
-        self.weekday_counts[new_user_id] += 1
+        self.weekday_counts[key] += 1
         yield GeoLifeRecord(
           user=new_user_id,
           latitude=entry["lat"],

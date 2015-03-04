@@ -58,14 +58,38 @@ def initialize_table(engine):
   Base.metadata.create_all(engine)
 
 
+from sqlalchemy import create_engine
+engine = create_engine(
+  "{dialect}://{username}:{password}@{host}/{database}".format(
+  dialect='postgresql+psycopg2',
+  username='postgres',
+  password='nope27rola',
+  host='localhost',
+  database='geolife'
+))
+
+from sqlalchemy.orm import sessionmaker
+Session = sessionmaker()
+Session.configure(bind=engine)
+
+def get_users_present_on(weekday):
+  session = Session()
+  result_set = session.query(GeoLifeUser.id).filter(GeoLifeUser.weekday == weekday).all()
+  users = []
+  for u, in result_set:
+    users.append(u)
+
+  session.close()
+  return users
+
 
 if __name__ == "__main__":
   for weekday in HomogenizedRecord.WEEKDAYS:
-    print(weekday)
-    """
     users = get_users_present_on(weekday)
+    print(users)
     users_present = []
     homogenized_records = []
+    """
     for t in datetimerange(time.min, tim.max, delta):
       records = SELECT * FROM records
               WHERE datetime in (t, t+delta)
