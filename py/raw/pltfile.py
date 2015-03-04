@@ -58,7 +58,6 @@ class GeoLifeFile:
 def load_from_directory(directory, user):
   return [GeoLifeFile(url=f, user=user) for f in get_plt_files(directory)]
 
-
 # Recursively search the input directory for PLT files, and build a list
 #  of absolute paths for these files.
 def get_plt_files(root_directory):
@@ -71,5 +70,4 @@ def get_plt_files(root_directory):
       os.path.join(dirName, f) for f in files if f.lower().endswith(".plt")
     ])
   return plt_files
-
 

@@ -17,15 +17,15 @@ import geolife
 import time
 from datetime import timedelta
 import tempfile
-import pltfile
 import random
 import os
 import shutil
+import utils
 random.seed(0)
 
 def make_subset_copy(src, dst):
-    pltfiles = pltfile.get_plt_files(src)
-    small_subset_of_pltfiles = random.sample(pltfiles, 500)
+    pltfiles = utils.get_plt_files(src)
+    small_subset_of_pltfiles = random.sample(pltfiles, 10)
     for f in small_subset_of_pltfiles:
       logger.debug(f)
       # Isolate the subdirectory that will need to be created in the temporary
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     make_subset_copy(src=geolife_root_directory, dst=sample_dir)
 
-    processor = geolife.GeoLifeDataset(directory=sample_dir)
+    #processor = geolife.GeoLifeDataset(directory=sample_dir)
 
   except:
     logger.exception("Stuff didn't do")
