@@ -31,6 +31,10 @@ def timerange(start, end, step=timedelta(seconds=1)):
   while element < end_date:
     yield element.time()
     element += step
+
+def timeAdd(t, delta):
+  dummy_date = datetime.now().date()
+  return (datetime.combine(dummy_date, t) + delta).time()
   
 
 class ETACalculator:
