@@ -23,9 +23,8 @@ def datetimerange(start, end, step=timedelta(seconds=1)):
     element += step
 
 def timerange(start, end, step=timedelta(seconds=1)):
-  dummy_date = datetime.now().date()
-  start_date = datetime.combine(dummy_date, start)
-  end_date = datetime.combine(dummy_date, end)
+  start_date = time2datetime(start)
+  end_date = time2datetime(end)
   
   element = start_date
   while element < end_date:
@@ -33,9 +32,19 @@ def timerange(start, end, step=timedelta(seconds=1)):
     element += step
 
 def timeAdd(t, delta):
+  return (time2datetime(t) + delta).time()
+
+def time2datetime(t):
   dummy_date = datetime.now().date()
-  return (datetime.combine(dummy_date, t) + delta).time()
-  
+  return datetime.combine(dummy_date, t)
+
+def timeDifferenceSeconds(t1, t2):
+  if t1 <= t2:
+    return (time2datetime(t2) - time2datetime(t1)).total_seconds()
+
+  else:
+    return timeDifferenceSeconds(t2, t1)
+
 
 class ETACalculator:
   def __init__(self, iterations):

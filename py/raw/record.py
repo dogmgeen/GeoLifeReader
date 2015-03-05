@@ -6,7 +6,6 @@ from sqlalchemy import Integer
 from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Time
-from sqlalchemy import Sequence
 from sqlalchemy import SmallInteger
 from datetime import timedelta
 

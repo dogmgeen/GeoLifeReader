@@ -6,67 +6,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger("geolife")
 stdout = logging.StreamHandler()
-stdout.setLevel(logging.DEBUG)
+stdout.setLevel(logging.INFO)
 logger.addHandler(stdout)
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import BigInteger
-from sqlalchemy import Float
-from sqlalchemy import Time
-from sqlalchemy import Sequence
-from sqlalchemy import SmallInteger
 from datetime import timedelta
 from datetime import time
 from utils import timerange
 from utils import timeAdd
+from utils import ETACalculator
+from utils import timeDifferenceSeconds
 from raw.record import GeoLifeUser
 from raw.record import WRecord
-
-WEEKDAY_STRINGS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-]
-
-Base = declarative_base()
-class HomogenizedRecord(Base):
-  __tablename__ = "time_homogenized"
-  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(BigInteger)#, index=True)
-  latitude = Column(Float)
-  longitude = Column(Float)
-  time = Column(Time)
-  weekday = Column(SmallInteger)
-
-  MONDAY = 0
-  TUESDAY = 1
-  WEDNESDAY = 2
-  THURSDAY = 3
-  FRIDAY = 4
-  SATURDAY = 5
-  SUNDAY = 6
-  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
-
-  def __repr__(self):
-    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
-      self.user, self.latitude, self.longitude,
-      self.datetime
-    )
-
-class HomogenizedGeoLifeUser(Base):
-  __tablename__ = "time_homo_user_weekday_count"
-  id = Column(BigInteger, primary_key=True)
-  count = Column(Integer)
-
-
-def initialize_table(engine):
-  Base.metadata.create_all(engine)
+from schema import HomogenizedRecord
+from schema import HomogenizedGeoLifeUser
+from schema import initialize_table
 
 
 from sqlalchemy import create_engine
@@ -74,7 +27,7 @@ engine = create_engine(
   "{dialect}://{username}:{password}@{host}/{database}".format(
   dialect='postgresql+psycopg2',
   username='postgres',
-  password='nope',
+  password='nope27rola',
   host='localhost',
   database='geolife'
 ))
@@ -142,6 +95,8 @@ delta = timedelta(seconds=5)
 if __name__ == "__main__":
   initialize_table(engine)
   session = Session()
+  total_eta = ETACalculator(len(HomogenizedRecord.WEEKDAYS))
+
   for weekday in HomogenizedRecord.WEEKDAYS:
     users = get_users_present_on(weekday)
     most_recent_records = RecentUserRecord(users)
@@ -149,6 +104,15 @@ if __name__ == "__main__":
     logger.debug("Users for {0}: {1}".format(weekday, users))
     users_present = set()
     homogenized_records = []
+
+    def num_elements_in_time_range(start, end, step):
+      timespan_seconds = timeDifferenceSeconds(start, end)
+      step_seconds = step.total_seconds()
+      return int(timespan_seconds/float(step_seconds))
+
+    n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
+    eta_til_completed_day = ETACalculator(n)
+
     for t in timerange(time.min, time.max, delta):
       logger.debug("="*60)
       logger.debug("Querying for time {0}".format(t))
@@ -181,17 +145,27 @@ if __name__ == "__main__":
       logger.info("Adding {0} homogenized records to database".format(
         len(homogenized_records)
       ))
-      s = Session()
-      s.add_all([HomogenizedRecord(
+      session.add_all([HomogenizedRecord(
           user=r.user, latitude=r.latitude, longitude=r.longitude,
           time=r.time, weekday=r.weekday,
         ) for r in homogenized_records
       ])
-      s.commit()
-      s.close()
+      session.commit()
 
       users_present.clear()
 
       assert len(homogenized_records) == len(users), "Number of homogenized recods {0} is not equal to the number of users {1}".format(len(homogenized_records), len(users))
       del homogenized_records[:]
+
+      eta_til_completed_day.checkpoint()
+      logger.info(eta_til_completed_day.eta())
+
+    total_eta.checkpoint()
+    logger.info("#"*80)
+    logger.info("#"*80)
+    logger.info("#"*80)
+    logger.info(total_eta.eta())
+    logger.info("#"*80)
+    logger.info("#"*80)
+    logger.info("#"*80)
 
