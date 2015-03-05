@@ -47,11 +47,12 @@ def timeDifferenceSeconds(t1, t2):
 
 
 class ETACalculator:
-  def __init__(self, iterations):
+  def __init__(self, iterations, name=None):
     self.n = iterations
     self.i = 0
     self.start = datetime.now()
     self.avg = 0
+    self.name = name
 
   def init(self):
     self.start = datetime.now()
@@ -66,8 +67,10 @@ class ETACalculator:
     eta_seconds = self.avg*(self.n - self.i)
     average = timedelta(seconds=self.avg)
     eta = timedelta(seconds=int(eta_seconds))
-    return ("Average:   {0}\n"
-            "ETA:       {1}".format(average, eta))
+    return ("===== {0} =====\n"
+            "Average:   {1}\n"
+            "ETA:       {2}\n"
+            "{3} out of {4}".format(self.name, average, eta, self.i, self.n))
 
 
 from pympler import summary, muppy

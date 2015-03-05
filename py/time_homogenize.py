@@ -27,7 +27,7 @@ engine = create_engine(
   "{dialect}://{username}:{password}@{host}/{database}".format(
   dialect='postgresql+psycopg2',
   username='postgres',
-  password='nope27rola',
+  password='nope',
   host='localhost',
   database='geolife'
 ))
@@ -56,7 +56,7 @@ class RecentUserRecord:
     s = Session()
     logger.info("Preloading RecentUserRecord object")
     records = s.query(WRecord).order_by(WRecord.time)
-    eta = ETACalculator(len(users))
+    eta = ETACalculator(len(users), name="Earliest User Records")
     for u in users:
       r = records.filter(WRecord.user == u).first()
       self.most_recent_record[u] = r
@@ -125,7 +125,7 @@ def verify_time_homogeniety(users, time_delta, db_session):
   logger.info("Verifying time homogeneity between {0} users".format(
     len(users)
   ))
-  eta = ETACalculator(len(users))
+  eta = ETACalculator(len(users), "Time Homogeneity Verification")
   for u in users:
     result_set = db_session.query(HomogenizedRecord.time)\
                            .filter(HomogenizedRecord.user == u)\
@@ -163,7 +163,7 @@ if __name__ == "__main__":
   homogenized_records = []
 
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
-  eta_til_completed_day = ETACalculator(n)
+  eta_til_completed_day = ETACalculator(n, "Synthesis")
 
   for t in timerange(time.min, time.max, delta):
       logger.debug("="*60)
