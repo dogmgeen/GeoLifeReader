@@ -121,7 +121,32 @@ def num_elements_in_time_range(start, end, step):
   step_seconds = step.total_seconds()
   return int(timespan_seconds/float(step_seconds))
 
-#delta = timedelta(hours=1)
+def verify_time_homogeniety(users, time_delta, db_session):
+  logger.info("Verifying time homogeneity between {0} users".format(
+    len(users)
+  ))
+  eta = ETACalculator(len(users))
+  for u in users:
+    result_set = db_session.query(HomogenizedRecord.time)\
+                           .filter(HomogenizedRecord.user == u)\
+                           .order_by(HomogenizedRecord.time)
+    previous = None
+    i = 0
+    for r, in result_set:
+      if previous is not None:
+        diff = timeDifferenceSeconds(r, previous)
+        assert diff == time_delta.total_seconds(), (
+          "Time homogeniety was not preserved for user {user}, record #{record}.\n"
+          "Expected time delta: {exp}\n"
+          "Actual time delta:   {act}".format(
+            user=u, record=i, exp=time_delta, act=diff
+        ))
+
+      previous = r
+      i += 1
+    eta.checkpoint()
+    logger.info(eta.eta())
+
 if __name__ == "__main__":
   args = get_arguments()
   weekday = args.weekday
@@ -186,4 +211,6 @@ if __name__ == "__main__":
 
       eta_til_completed_day.checkpoint()
       logger.info(eta_til_completed_day.eta())
+
+  verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
 
