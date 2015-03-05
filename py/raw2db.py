@@ -31,6 +31,13 @@ def get_arguments():
     help='Directory containing PLT files (default: current working directory)',
     type=geolife.find_geolife_root,
   )
+  parser.add_argument(
+    '-w', '--weekday',
+    dest="weekday",
+    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
+    type=int,
+    default=0,
+  )
 
   args = parser.parse_args()
   return args
@@ -39,12 +46,16 @@ def get_arguments():
 if __name__ == "__main__":
   args = get_arguments()
   directory = args.input_directory
-
+  weekday = args.weekday
+  logger.info("Loading database with raw Geolife records")
+  logger.info("Weekday: {0}".format(record.WEEKDAY_STRINGS[weekday]))
+  logger.info("Source:  {0}".format(directory))
+  
   engine = create_engine(
       "{dialect}://{username}:{password}@{host}/{database}".format(
       dialect='postgresql+psycopg2',
       username='postgres',
-      password='nope27rola',
+      password='nope',
       host='localhost',
       database='geolife'
   ))
@@ -61,8 +72,9 @@ if __name__ == "__main__":
   timer = ETACalculator(iterations=geolife.get_num_files(directory))
   user_weekday_counts = defaultdict(int)
   for u in user.from_directory(directory):
-        logger.info("Beginning yielding of records from user {0.id}".format(u))
-        for f in u.files:
+    logger.info("Beginning yielding of records from user {0.id}".format(u))
+    for f in u.files:
+      if f.occursOn(weekday):
           session.add_all(f)
           session.commit()
 
