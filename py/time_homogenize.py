@@ -20,7 +20,7 @@ from raw.record import WRecord
 from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
-
+import argparse
 
 from sqlalchemy import create_engine
 engine = create_engine(
@@ -54,12 +54,15 @@ class RecentUserRecord:
     self.most_recent_record = {}
     
     s = Session()
-    logger.debug("Preloading RecentUserRecord object")
+    logger.info("Preloading RecentUserRecord object")
+    records = s.query(WRecord).order_by(WRecord.time)
+    eta = ETACalculator(len(users))
     for u in users:
-      r = s.query(WRecord).filter(WRecord.user == u)\
-                          .order_by(WRecord.time).first()
+      r = records.filter(WRecord.user == u).first()
       self.most_recent_record[u] = r
-      logger.debug("First record for user {0}: {1}".format(u, r))
+      logger.info("First record for user {0}: {1}".format(u, r))
+      eta.checkpoint()
+      logger.info(eta.eta())
     s.close()
 
   def get(self, time, user):
@@ -90,30 +93,54 @@ class RecentUserRecord:
     self.most_recent_record[user] = record
 
 
-delta = timedelta(seconds=5)
+def get_arguments():
+  parser = argparse.ArgumentParser(
+    description='Homogenize time deltas between records.'
+  )
+  parser.add_argument(
+    '-w', '--weekday',
+    dest="weekday",
+    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
+    type=int,
+    default=0,
+  )
+  parser.add_argument(
+    '-d', '--time-delta',
+    dest='time_delta',
+    help="Number of seconds that should be between any two consecutive records",
+    type=lambda x: timedelta(seconds=x),
+    default=timedelta(seconds=5),
+  )
+
+  args = parser.parse_args()
+  return args
+
+
+def num_elements_in_time_range(start, end, step):
+  timespan_seconds = timeDifferenceSeconds(start, end)
+  step_seconds = step.total_seconds()
+  return int(timespan_seconds/float(step_seconds))
+
 #delta = timedelta(hours=1)
 if __name__ == "__main__":
+  args = get_arguments()
+  weekday = args.weekday
+  delta = args.time_delta
+
   initialize_table(engine)
   session = Session()
-  total_eta = ETACalculator(len(HomogenizedRecord.WEEKDAYS))
 
-  for weekday in HomogenizedRecord.WEEKDAYS:
-    users = get_users_present_on(weekday)
-    most_recent_records = RecentUserRecord(users)
-    logger.debug("#"*80)
-    logger.debug("Users for {0}: {1}".format(weekday, users))
-    users_present = set()
-    homogenized_records = []
+  users = get_users_present_on(weekday)
+  most_recent_records = RecentUserRecord(users)
+  logger.debug("#"*80)
+  logger.debug("Users for {0}: {1}".format(weekday, users))
+  users_present = set()
+  homogenized_records = []
 
-    def num_elements_in_time_range(start, end, step):
-      timespan_seconds = timeDifferenceSeconds(start, end)
-      step_seconds = step.total_seconds()
-      return int(timespan_seconds/float(step_seconds))
+  n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
+  eta_til_completed_day = ETACalculator(n)
 
-    n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
-    eta_til_completed_day = ETACalculator(n)
-
-    for t in timerange(time.min, time.max, delta):
+  for t in timerange(time.min, time.max, delta):
       logger.debug("="*60)
       logger.debug("Querying for time {0}".format(t))
       record_set = session.query(WRecord).filter(
@@ -159,13 +186,4 @@ if __name__ == "__main__":
 
       eta_til_completed_day.checkpoint()
       logger.info(eta_til_completed_day.eta())
-
-    total_eta.checkpoint()
-    logger.info("#"*80)
-    logger.info("#"*80)
-    logger.info("#"*80)
-    logger.info(total_eta.eta())
-    logger.info("#"*80)
-    logger.info("#"*80)
-    logger.info("#"*80)
 
