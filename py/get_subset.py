@@ -25,7 +25,7 @@ random.seed(0)
 
 def make_subset_copy(src, dst):
     pltfiles = pltfile.get_plt_files(src)
-    small_subset_of_pltfiles = random.sample(pltfiles, 50)
+    small_subset_of_pltfiles = random.sample(pltfiles, 100)
     for f in small_subset_of_pltfiles:
       logger.debug(f)
       # Isolate the subdirectory that will need to be created in the temporary

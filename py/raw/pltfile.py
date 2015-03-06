@@ -21,10 +21,10 @@ class GeoLifeFile:
 
   def restrictRecordsTo(self, weekday, aoi):
     self.active_weekday = weekday
-    self.latitude_min = aoi['west']
-    self.latitude_max = aoi['east']
-    self.longitude_min = aoi['south']
-    self.longitude_max = aoi['north']
+    self.latitude_min = aoi['south']
+    self.latitude_max = aoi['north']
+    self.longitude_min = aoi['west']
+    self.longitude_max = aoi['east']
 
   def occursOn(self, weekday):
     filename = os.path.basename(self.url).split(".")[0]
@@ -43,7 +43,11 @@ class GeoLifeFile:
         #  Beijing, it is important to shift the actual time to local time.
         d = convertToBeijingTime(timestamp2datetime(entry))
         weekday = d.weekday()
-        if self.active_weekday == weekday:
+        if all([
+          self.active_weekday == weekday,
+          self.latitude_min < float(entry["lat"]) < self.latitude_max,
+          self.longitude_min < float(entry["long"]) < self.longitude_max,
+        ]):
           datetime_suffix = d.strftime("%Y%m%d")
 
           new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
