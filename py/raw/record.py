@@ -8,6 +8,7 @@ from sqlalchemy import Float
 from sqlalchemy import Time
 from sqlalchemy import SmallInteger
 from datetime import timedelta
+import random
 
 WEEKDAY_STRINGS = [
   "Monday",
@@ -53,6 +54,16 @@ class GeoLifeUser(Base):
 
 def initialize_table(engine):
   Base.metadata.create_all(engine)
+
+def getUserSubset(n, weekday, session, randomize=False):
+  records = session.query(GeoLifeUser.id).filter(
+    GeoLifeUser.weekday == weekday
+  ).order_by(GeoLifeUser.id).all()
+  users = [r for r, in records]
+  if randomize:
+    return random.sample(users, n)
+  else:
+    return users[:n]
 
 
 class LinkedRecords:

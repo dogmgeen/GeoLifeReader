@@ -56,6 +56,12 @@ def timeDifferenceSeconds(t1, t2):
     return timeDifferenceSeconds(t2, t1)
 
 
+def num_elements_in_time_range(start, end, step):
+  timespan_seconds = timeDifferenceSeconds(start, end)
+  step_seconds = step.total_seconds()
+  return int(timespan_seconds/float(step_seconds))
+
+
 class ETACalculator:
   def __init__(self, iterations, name=None):
     self.n = iterations

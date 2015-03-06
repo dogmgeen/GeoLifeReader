@@ -15,6 +15,7 @@ from utils import timerange
 from utils import timeAdd
 from utils import ETACalculator
 from utils import timeDifferenceSeconds
+from utils import num_elements_in_time_range
 from raw.record import GeoLifeUser
 from raw.record import WRecord
 from schema import HomogenizedRecord
@@ -108,11 +109,6 @@ def get_arguments():
   args = parser.parse_args()
   return args
 
-
-def num_elements_in_time_range(start, end, step):
-  timespan_seconds = timeDifferenceSeconds(start, end)
-  step_seconds = step.total_seconds()
-  return int(timespan_seconds/float(step_seconds))
 
 def verify_time_homogeniety(users, time_delta, db_session):
   logger.info("Verifying time homogeneity between {0} users".format(
