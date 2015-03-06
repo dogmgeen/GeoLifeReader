@@ -3,6 +3,7 @@ logger = logging.getLogger("geolife.utils")
 from datetime import datetime
 from datetime import timedelta
 import os
+import pytz
 
 GEOLIFE_DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
@@ -12,6 +13,15 @@ def timestamp2datetime(entry):
     GEOLIFE_DATE_FMT
   )
 
+GMT = pytz.timezone('GMT')
+beijing_timezone = pytz.timezone('Asia/Shanghai')
+def convertToBeijingTime(d):
+  logger.debug("GMT datetime: {0}".format(d))
+  gmt_datetime = GMT.localize(d)
+  beijing_datetime = gmt_datetime.astimezone(beijing_timezone)
+  logger.debug("Beijing datetime: {0}".format(beijing_datetime))
+  return beijing_datetime
+  
 
 def datetimerange(start, end, step=timedelta(seconds=1)):
   # start: datetime object

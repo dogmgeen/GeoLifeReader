@@ -12,12 +12,12 @@ logger.addHandler(stdout)
 import argparse
 import os
 import geolife
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from raw import record
 from raw import user
 from utils import ETACalculator
 from collections import defaultdict
+import config
 
 
 # Parse the command-line arguments.
@@ -51,14 +51,7 @@ if __name__ == "__main__":
   logger.info("Weekday: {0}".format(record.WEEKDAY_STRINGS[weekday]))
   logger.info("Source:  {0}".format(directory))
   
-  engine = create_engine(
-      "{dialect}://{username}:{password}@{host}/{database}".format(
-      dialect='postgresql+psycopg2',
-      username='postgres',
-      password='nope',
-      host='localhost',
-      database='geolife'
-  ))
+  engine = config.getEngine()
 
   Session = sessionmaker()
   Session.configure(bind=engine)
@@ -74,6 +67,7 @@ if __name__ == "__main__":
   for u in user.from_directory(directory):
     logger.info("Beginning yielding of records from user {0.id}".format(u))
     for f in u.files:
+      f.restrictRecordsTo(weekday=weekday, aoi=config.BEIJING)
       if f.occursOn(weekday):
           session.add_all(f)
           session.commit()

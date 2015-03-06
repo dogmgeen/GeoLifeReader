@@ -3,6 +3,7 @@ logger = logging.getLogger("geolife.file")
 import os
 import csv
 from utils import timestamp2datetime
+from utils import convertToBeijingTime
 #from record import GeoLifeRecord
 from record import WRecord as GeoLifeRecord
 from collections import defaultdict
@@ -18,8 +19,14 @@ class GeoLifeFile:
     self.url = url
     self.weekday_counts = defaultdict(int)
 
-  def occursOn(self, weekday):
+  def restrictRecordsTo(self, weekday, aoi):
     self.active_weekday = weekday
+    self.latitude_min = aoi['west']
+    self.latitude_max = aoi['east']
+    self.longitude_min = aoi['south']
+    self.longitude_max = aoi['north']
+
+  def occursOn(self, weekday):
     filename = os.path.basename(self.url).split(".")[0]
     date_from_filename = datetime.strptime(filename, FILENAME_DATE_FMT)
     return (date_from_filename.weekday() == weekday)
@@ -32,7 +39,9 @@ class GeoLifeFile:
 
       reader = csv.DictReader(f, fieldnames=SCHEMA)
       for entry in reader:
-        d = timestamp2datetime(entry)
+        # Timestamps were in GMT. Since the majority of movement occurs in
+        #  Beijing, it is important to shift the actual time to local time.
+        d = convertToBeijingTime(timestamp2datetime(entry))
         weekday = d.weekday()
         if self.active_weekday == weekday:
           datetime_suffix = d.strftime("%Y%m%d")

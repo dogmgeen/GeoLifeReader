@@ -22,15 +22,8 @@ from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
 import argparse
 
-from sqlalchemy import create_engine
-engine = create_engine(
-  "{dialect}://{username}:{password}@{host}/{database}".format(
-  dialect='postgresql+psycopg2',
-  username='postgres',
-  password='nope',
-  host='localhost',
-  database='geolife'
-))
+import config
+engine = config.getEngine()
 
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker()
