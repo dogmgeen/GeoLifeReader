@@ -34,6 +34,7 @@ import os
 from one import ExternalMovementReaderConverter
 from utils import timeDifferenceSeconds
 import messages
+import pystache
 
 Session = sessionmaker()
 engine = getEngine()
@@ -164,8 +165,8 @@ if __name__ == "__main__":
       logger.info(eta_til_completed.eta())
 
   # Create message files and configuration files.
-  duration = timeDifferenceSeconds(time.max, time.min)
-  num_messages = arg.num_messages
+  duration = int(timeDifferenceSeconds(time.max, time.min))
+  num_messages = args.num_messages
   leaf_directory = os.path.dirname(one_movement_filepath)
   msgs_file = os.path.join(leaf_directory, "msgs.csv")
   interests_file = os.path.join(leaf_directory, "interests.csv")

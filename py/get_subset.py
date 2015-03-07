@@ -21,6 +21,7 @@ from raw import pltfile
 import random
 import os
 import shutil
+import sys
 random.seed(0)
 
 def make_subset_copy(src, dst):
