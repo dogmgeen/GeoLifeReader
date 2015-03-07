@@ -16,10 +16,8 @@ def timestamp2datetime(entry):
 GMT = pytz.timezone('GMT')
 beijing_timezone = pytz.timezone('Asia/Shanghai')
 def convertToBeijingTime(d):
-  logger.debug("GMT datetime: {0}".format(d))
   gmt_datetime = GMT.localize(d)
   beijing_datetime = gmt_datetime.astimezone(beijing_timezone)
-  logger.debug("Beijing datetime: {0}".format(beijing_datetime))
   return beijing_datetime
   
 
