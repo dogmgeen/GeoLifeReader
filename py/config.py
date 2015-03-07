@@ -21,6 +21,9 @@ DELTA = timedelta(seconds=5)
 NUM_MESSAGES = 5000
 NUM_USERS = 20
 DECIMAL_DEGREES_TO_GRID_SCALE = 90000
+CONFIG_TEMPLATE = "./config/epidemic_and_chitchat_MessageReport.mustache"
+#"./config/epidemic_and_chitchat.mustache"
+CONFIG_FILE = "batch_settlings.txt"
 
 def getEngine():
   return create_engine(

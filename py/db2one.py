@@ -21,6 +21,8 @@ from raw.record import WEEKDAY_STRINGS
 from config import getEngine
 from config import BEIJING
 from config import DECIMAL_DEGREES_TO_GRID_SCALE
+from config import CONFIG_TEMPLATE
+from config import CONFIG_FILE
 import argparse
 from utils import timerange
 from utils import ETACalculator
@@ -30,6 +32,8 @@ from datetime import timedelta
 from sqlalchemy.orm import sessionmaker
 import os
 from one import ExternalMovementReaderConverter
+from utils import timeDifferenceSeconds
+import messages
 
 Session = sessionmaker()
 engine = getEngine()
@@ -67,6 +71,13 @@ def get_arguments():
     help="Number of seconds that should be between any two consecutive records",
     type=lambda x: timedelta(seconds=x),
     default=timedelta(seconds=5),
+  )
+  parser.add_argument(
+    '-m', '--num-messages',
+    dest="num_messages",
+    help='Number of messages to create in total',
+    type=int,
+    default=5000,
   )
 
   args = parser.parse_args()
@@ -151,3 +162,46 @@ if __name__ == "__main__":
       write_to_file(records, f, converter)
       eta_til_completed.checkpoint()
       logger.info(eta_til_completed.eta())
+
+  # Create message files and configuration files.
+  duration = timeDifferenceSeconds(time.max, time.min)
+  num_messages = arg.num_messages
+  leaf_directory = os.path.dirname(one_movement_filepath)
+  msgs_file = os.path.join(leaf_directory, "msgs.csv")
+  interests_file = os.path.join(leaf_directory, "interests.csv")
+  descriptors_file = os.path.join(leaf_directory, "metadata.csv")
+
+  msgs = messages.create(
+    n=num_messages,
+    num_users=num_users,
+    duration=duration,
+    delta=delta
+  )
+  msgs.convertToONE(msgs_file)
+  msgs.createChitChatFiles(
+    num_social_interests=2*num_users,
+    social_interests_per_user=5,
+    metadata_descriptors_per_msg=4,
+    social_interests_file=interests_file,
+    metadata_descriptors_file=descriptors_file
+  )
+
+  # Create configuration file.
+  config_file = os.path.join(output_directory, CONFIG_FILE)
+  logger.info("Writing out config file to {0}".format(config_file))
+  with open(config_file, "w") as outfile:
+    with open(CONFIG_TEMPLATE, 'r') as infile:
+      outfile.write(pystache.render(
+        infile.read(), {
+        'num_hosts': num_users,
+        'duration': duration,
+        'max_x': converter.normalized_max_x,
+        'max_y': converter.normalized_max_y,
+        'external_movement_file': one_movement_filepath,
+        'date': WEEKDAY_STRINGS[weekday],
+        'messages_file': msgs_file,
+        'social_interests': interests_file,
+        'message_metadata': descriptors_file,
+        'beta': 3.0,
+        'sigma': 10,
+      }))
