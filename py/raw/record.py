@@ -60,8 +60,12 @@ def getUserSubset(n, weekday, session, randomize=False):
     GeoLifeUser.weekday == weekday
   ).order_by(GeoLifeUser.id).all()
   users = [r for r, in records]
+  if n is None:
+    return users
+
   if randomize:
     return random.sample(users, n)
+
   else:
     return users[:n]
 

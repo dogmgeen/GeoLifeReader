@@ -50,7 +50,8 @@ def get_arguments():
     '-o', '--output_directory',
     dest="output_directory",
     help='Directory to store created files (default: ./out)',
-    default="./out"
+    default="./out",
+    type=os.path.abspath,
   )
   parser.add_argument(
     '-w', '--weekday',
@@ -117,7 +118,10 @@ if __name__ == "__main__":
   session = Session()
 
   args = get_arguments()
-  num_users = args.num_users
+  if args.num_users == 0:
+    num_users = None
+  else:
+    num_users = args.num_users
   weekday = args.weekday
   delta = args.time_delta
   output_directory = args.output_directory
@@ -135,6 +139,9 @@ if __name__ == "__main__":
     logger.warning("Instead of {0}, there are only {1} users in the"
                    " database.".format(num_users, len(users)))
     num_users = len(users)
+  if num_users is None:
+    num_users = len(users)
+
   logger.info("Users selected: {0}".format(users))
 
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)

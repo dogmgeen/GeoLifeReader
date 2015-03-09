@@ -13,6 +13,7 @@ import argparse
 import os
 import geolife
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Index
 from raw import record
 from raw import user
 from utils import ETACalculator
@@ -86,6 +87,10 @@ if __name__ == "__main__":
           logger.info("="*60)
           logger.info("File {0}".format(os.path.basename(f.url)))
           logger.info(timer.eta())
+
+  # Create an index on the time values
+  logger.info("Creating index on raw record time columns")
+  Index('raw_time', record.WRecord.__table__.c.time)
 
   # Store the user-date-count information.
   user_weekday_counts_db = []
