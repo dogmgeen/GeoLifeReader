@@ -36,8 +36,7 @@ def get_arguments():
     '-w', '--weekday',
     dest="weekday",
     help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
-    type=int,
-    default=0,
+    default=None,
   )
 
   args = parser.parse_args()
@@ -47,9 +46,16 @@ def get_arguments():
 if __name__ == "__main__":
   args = get_arguments()
   directory = args.input_directory
-  weekday = args.weekday
   logger.info("Loading database with raw Geolife records")
-  logger.info("Weekday: {0}".format(record.WEEKDAY_STRINGS[weekday]))
+  
+  if args.weekday is None:
+    logger.info("All weekdays")
+    weekday = None
+
+  else:
+    weekday = int(args.weekday)
+    logger.info("Weekday: {0}".format(record.WEEKDAY_STRINGS[weekday]))
+
   logger.info("Source:  {0}".format(directory))
   
   engine = config.getEngine()
@@ -69,7 +75,7 @@ if __name__ == "__main__":
     logger.info("Beginning yielding of records from user {0.id}".format(u))
     for f in u.files:
       f.restrictRecordsTo(weekday=weekday, aoi=config.BEIJING)
-      if f.occursOn(weekday):
+      if weekday is None or f.occursOn(weekday):
           session.add_all(f)
           session.commit()
 
