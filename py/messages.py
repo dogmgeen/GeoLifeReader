@@ -27,7 +27,7 @@ def create(n, num_users, duration, delta, seed=None):
       timestamp=timestamp,
       sender=sender,
       receiver=receiver,
-      size=16000, 
+      size=32768, 
     ))
 
   msgs.assignUniqueIDs()

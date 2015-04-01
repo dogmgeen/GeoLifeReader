@@ -139,6 +139,8 @@ if __name__ == "__main__":
     logger.warning("Instead of {0}, there are only {1} users in the"
                    " database.".format(num_users, len(users)))
     num_users = len(users)
+
+  # num_users is None when all users are to be output
   if num_users is None:
     num_users = len(users)
 
