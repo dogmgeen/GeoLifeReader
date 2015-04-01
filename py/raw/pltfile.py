@@ -19,7 +19,7 @@ class GeoLifeFile:
     self.url = url
     self.weekday_counts = defaultdict(int)
 
-  def restrictRecordsTo(self, weekday, aoi):
+  def restrictRecordsTo(self, aoi, weekday=None):
     self.active_weekday = weekday
     self.latitude_min = aoi['south']
     self.latitude_max = aoi['north']
@@ -42,12 +42,16 @@ class GeoLifeFile:
         # Timestamps were in GMT. Since the majority of movement occurs in
         #  Beijing, it is important to shift the actual time to local time.
         d = convertToBeijingTime(timestamp2datetime(entry))
-        weekday = d.weekday()
-        if all([
-          self.active_weekday == weekday,
+
+        valid_conditions = [
           self.latitude_min < float(entry["lat"]) < self.latitude_max,
           self.longitude_min < float(entry["long"]) < self.longitude_max,
-        ]):
+        ]
+        if self.active_weekday is not None:
+          weekday = d.weekday()
+          valid_conditions.append(self.active_weekday == weekday)
+
+        if all(valid_conditions):
           datetime_suffix = d.strftime("%Y%m%d")
 
           new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
