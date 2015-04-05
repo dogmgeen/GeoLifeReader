@@ -1,13 +1,9 @@
 import logging
-logging.basicConfig(
-  level=logging.DEBUG,
-  filename='/tmp/time_homo.log',
-  filemode='w'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("geolife")
-stdout = logging.StreamHandler()
-stdout.setLevel(logging.INFO)
-logger.addHandler(stdout)
+#stdout = logging.StreamHandler()
+#stdout.setLevel(logging.INFO)
+#logger.addHandler(stdout)
 
 from datetime import timedelta
 from datetime import time
@@ -102,7 +98,7 @@ def get_arguments():
     '-d', '--time-delta',
     dest='time_delta',
     help="Number of seconds that should be between any two consecutive records",
-    type=lambda x: timedelta(seconds=x),
+    type=lambda x: timedelta(seconds=int(x)),
     default=timedelta(seconds=5),
   )
 
@@ -201,5 +197,5 @@ if __name__ == "__main__":
       eta_til_completed_day.checkpoint()
       logger.info(eta_til_completed_day.eta())
 
-  verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
+  #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
 
