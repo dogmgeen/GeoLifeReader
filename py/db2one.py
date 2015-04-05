@@ -71,7 +71,7 @@ def get_arguments():
     '-d', '--time-delta',
     dest='time_delta',
     help="Number of seconds that should be between any two consecutive records",
-    type=lambda x: timedelta(seconds=x),
+    type=lambda x: timedelta(seconds=int(x)),
     default=timedelta(seconds=5),
   )
   parser.add_argument(
