@@ -9,10 +9,10 @@ ALL_CHINA = {
 }
 
 BEIJING = {
-  "north": 41.1398565,
-  "south": 38.5089264,
-  "east": 118.3662329,
-  "west": 115.3983897,
+  "north": 40.58, #41.1398565,
+  "south": 39.20, #38.5089264,
+  "east": 117.30, #118.3662329,
+  "west": 115.99, #115.3983897,
 }
 
 TRACE_DESTINATION_DIRECTORY = "/home/djmvfb/one"
@@ -31,7 +31,7 @@ def getEngine():
     "{dialect}://{username}:{password}@{host}/{database}".format(
     dialect='postgresql+psycopg2',
     username='postgres',
-    password='nope27rola',
+    password='nope',
     host='localhost',
     database='geolife'
   ))
