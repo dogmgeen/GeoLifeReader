@@ -40,15 +40,30 @@ def get_users_present_on(weekday):
   return users
 
 class RecentUserRecord:
-  def __init__(self, users):
+  def __init__(self, users, aoi=None):
     self.most_recent_record = {}
+    if aoi is None:
+      self.aoi = dict(
+        east=float("inf"), west=float("-inf"),
+        south=float("-inf"), north=float("inf")
+      )
+      aoi = self.aoi
+    else:
+      self.aoi = aoi
     
     s = Session()
     logger.info("Preloading RecentUserRecord object")
-    records = s.query(WRecord).order_by(WRecord.time)
+    records = s.query(WRecord).filter(
+      WRecord.longitude > aoi["west"],
+      WRecord.longitude < aoi["east"],
+      WRecord.latitude > aoi["south"],
+      WRecord.latitude < aoi["north"],
+    ).order_by(WRecord.time)
     eta = ETACalculator(len(users), name="Earliest User Records")
     for u in users:
-      r = records.filter(WRecord.user == u).first()
+      r = records.filter(
+        WRecord.user == u,
+      ).first()
       self.most_recent_record[u] = r
       logger.info("First record for user {0}: {1}".format(u, r))
       eta.checkpoint()
@@ -64,7 +79,11 @@ class RecentUserRecord:
       s = Session()
       r = s.query(WRecord).filter(
         WRecord.time < t,
-        WRecord.user == u
+        WRecord.user == u,
+        WRecord.longitude > self.aoi["west"],
+        WRecord.longitude < self.aoi["east"],
+        WRecord.latitude > self.aoi["south"],
+        WRecord.latitude < self.aoi["north"],
       ).order_by(WRecord.time).first()
       self.most_recent_record[user] = r
       s.close()
@@ -136,12 +155,13 @@ if __name__ == "__main__":
   args = get_arguments()
   weekday = args.weekday
   delta = args.time_delta
+  aoi = config.BEIJING_80
 
   initialize_table(engine)
   session = Session()
 
   users = get_users_present_on(weekday)
-  most_recent_records = RecentUserRecord(users)
+  most_recent_records = RecentUserRecord(users, aoi=aoi)
   logger.debug("#"*80)
   logger.debug("Users for {0}: {1}".format(weekday, users))
   users_present = set()
@@ -156,7 +176,11 @@ if __name__ == "__main__":
       record_set = session.query(WRecord).filter(
         WRecord.time >= t,
         WRecord.time < timeAdd(t, delta),
-        WRecord.user.in_(users)
+        WRecord.user.in_(users),
+        WRecord.longitude > aoi["west"],
+        WRecord.longitude < aoi["east"],
+        WRecord.latitude > aoi["south"],
+        WRecord.latitude < aoi["north"],
       ).order_by(WRecord.time).all()
       
       i = 0

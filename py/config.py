@@ -15,6 +15,13 @@ BEIJING = {
   "west": 115.99, #115.3983897,
 }
 
+BEIJING_80 = {
+  "north": 40.049,
+  "south": 39.889,
+  "east": 116.2784,
+  "west": 116.4584,
+}
+
 TRACE_DESTINATION_DIRECTORY = "/home/djmvfb/one"
 TRACE_FILENAME_FORMAT = "geolife2one_{0}_{1}users.csv"
 DELTA = timedelta(seconds=5)
@@ -31,7 +38,7 @@ def getEngine():
     "{dialect}://{username}:{password}@{host}/{database}".format(
     dialect='postgresql+psycopg2',
     username='postgres',
-    password='nope',
+    password='nope27rola',
     host='localhost',
     database='geolife'
   ))
