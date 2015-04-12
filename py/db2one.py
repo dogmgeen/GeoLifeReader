@@ -81,6 +81,13 @@ def get_arguments():
     type=int,
     default=5000,
   )
+  parser.add_argument(
+    '-s', '--message-size',
+    dest="size",
+    help='Message size (bytes, default is 32KB)',
+    type=int,
+    default=32768,
+  )
 
   args = parser.parse_args()
   return args
@@ -185,7 +192,8 @@ if __name__ == "__main__":
     n=num_messages,
     num_users=num_users,
     duration=duration,
-    delta=delta
+    delta=delta,
+    size=args.size,
   )
   msgs.convertToONE(msgs_file)
   msgs.createChitChatFiles(
