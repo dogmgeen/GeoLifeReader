@@ -12,8 +12,8 @@ MovementModel.worldSize = {{max_x}}, {{max_y}}
 # External Movement model created from GeoLifeReader project
 ExternalMovement.file = {{external_movement_file}}
 
-Scenario.name = [{{date}}-Epidemic_geolife; {{date}}-ChitChat_geolife]
-Group.router = [EpidemicRouter;chitchat.ChitChatRouter]
+Scenario.name = [{{date}}-Epidemic; {{date}}-ChitChat]
+Group.router = [EpidemicRouter; chitchat.ChitChatRouter]
 
 ChitChatRouter.interests = {{social_interests}}
 ChitChatRouter.messageMetadataFile = {{message_metadata}}
@@ -22,15 +22,13 @@ ChitChatRouter.SocialPatternDecay.beta = {{beta}}
 ChitChatRouter.SocialPatternDecay.sigma = {{sigma}}
 
 # how many reports to load
-Report.nrofReports = 3
+Report.nrofReports = 1
 # length of the warm up period (simulated seconds)
 Report.warmup = 0
 # default directory of reports (can be overridden per Report with output setting)
 Report.reportDir = reports/
 # Report classes to load
-Report.report1 = BetterMessageReport
-Report.report2 = MessageStatsReport
-Report.report3 = BetterMessageDropReport
+Report.report1 = MessageStatsReport
 
 Group.bufferSize = 500M
 # Message TTL of 300 minutes (5 hours)
@@ -112,7 +110,7 @@ SprayAndWaitRouter.binaryMode = true
 
 ## Optimization settings -- these affect the speed of the simulation
 ## see World class for details.
-Optimization.cellSizeMult = 2
+Optimization.cellSizeMult = 1
 Optimization.randomizeUpdateOrder = true
 
 # how many events to show in the log panel (default = 30)
