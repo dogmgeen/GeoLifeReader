@@ -18,8 +18,8 @@ BEIJING = {
 BEIJING_80 = {
   "north": 40.049,
   "south": 39.889,
-  "east": 116.2784,
-  "west": 116.4584,
+  "west": 116.2784,
+  "east": 116.4584,
 }
 
 TRACE_DESTINATION_DIRECTORY = "/home/djmvfb/one"

@@ -19,7 +19,7 @@ from schema import HomogenizedRecord
 from raw.record import getUserSubset
 from raw.record import WEEKDAY_STRINGS
 from config import getEngine
-from config import BEIJING
+from config import BEIJING_80
 from config import DECIMAL_DEGREES_TO_GRID_SCALE
 from config import CONFIG_TEMPLATE
 from config import CONFIG_FILE
@@ -149,7 +149,7 @@ if __name__ == "__main__":
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
   eta_til_completed = ETACalculator(n, "DB to ONE output")
   converter = ExternalMovementReaderConverter(
-    extent=BEIJING,
+    extent=BEIJING_80,
     decimal_degree_scaling_factor=DECIMAL_DEGREES_TO_GRID_SCALE,
     users=users
   )

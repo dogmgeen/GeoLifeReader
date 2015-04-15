@@ -74,7 +74,7 @@ if __name__ == "__main__":
   for u in user.from_directory(directory):
     logger.info("Beginning yielding of records from user {0.id}".format(u))
     for f in u.files:
-      f.restrictRecordsTo(weekday=weekday, aoi=config.BEIJING)
+      f.restrictRecordsTo(weekday=weekday, aoi=config.BEIJING_80)
       if weekday is None or f.occursOn(weekday):
           session.add_all(f)
           session.commit()
