@@ -27,14 +27,6 @@ class StatisticsCalculator:
       self.max_time
     ))
 
-    # Minimum difference between consecutive elements
-    self.min_time_delta = min([
-      u.linked_list.getMinTimeDelta() for u in self.users
-    ])
-    logger.info("Smallest time interval is {0} seconds".format(
-      self.min_time_delta
-    ))
-
     # Min and Max lat/longs.
     ext = reduce(
       extent.extendExtents, 

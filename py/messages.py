@@ -6,7 +6,7 @@ from chitchat import Message
 from chitchat import createUsers
 
 
-def create(n, num_users, duration, delta, seed=None):
+def create(n, num_users, duration, delta, size, seed=None):
   delta_seconds = delta.total_seconds()
   logger.info("Creating {0} messages".format(n))
   if seed is None:
@@ -27,7 +27,7 @@ def create(n, num_users, duration, delta, seed=None):
       timestamp=timestamp,
       sender=sender,
       receiver=receiver,
-      size=16000, 
+      size=size, 
     ))
 
   msgs.assignUniqueIDs()

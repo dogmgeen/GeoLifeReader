@@ -3,39 +3,71 @@ logger = logging.getLogger("geolife.record")
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import String
+from sqlalchemy import BigInteger
 from sqlalchemy import Float
-from sqlalchemy import DateTime
-from sqlalchemy import Date
 from sqlalchemy import Time
-from sqlalchemy import Sequence
-from sqlalchemy import Boolean
 from sqlalchemy import SmallInteger
 from datetime import timedelta
-from extent import RectangularExtent
+import random
+
+WEEKDAY_STRINGS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+]
 
 Base = declarative_base()
-class GeoLifeRecord(Base):
+class WRecord(Base):
   __tablename__ = "records"
-  id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-  user = Column(Integer)#, index=True)
+  id = Column(Integer, primary_key=True)
+  user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
-  datetime = Column(DateTime)#, index=True)
-  date = Column(Date)#, index=True)
   time = Column(Time)#, index=True)
-  is_synthesized = Column(Boolean, default=False)
   weekday = Column(SmallInteger)
 
+  MONDAY = 0
+  TUESDAY = 1
+  WEDNESDAY = 2
+  THURSDAY = 3
+  FRIDAY = 4
+  SATURDAY = 5
+  SUNDAY = 6
+  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+
   def __repr__(self):
-    return "<GeoLifeRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
+    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), time={3})>".format(
       self.user, self.latitude, self.longitude,
-      self.datetime
+      self.time
     )
+
+class GeoLifeUser(Base):
+  __tablename__ = "users"
+  id = Column(BigInteger, primary_key=True)
+  count = Column(Integer)
+  weekday = Column(SmallInteger)
 
 
 def initialize_table(engine):
   Base.metadata.create_all(engine)
+
+def getUserSubset(n, weekday, session, randomize=False):
+  records = session.query(GeoLifeUser.id).filter(
+    GeoLifeUser.weekday == weekday
+  ).order_by(GeoLifeUser.id).all()
+  users = [r for r, in records]
+  if n is None:
+    return users
+
+  if randomize:
+    return random.sample(users, n)
+
+  else:
+    return users[:n]
 
 
 class LinkedRecords:
@@ -75,28 +107,6 @@ class LinkedRecords:
           current.record.longitude, current.record.latitude
         )
       logger.debug("Finished setting up extents") 
-
-  def getMinTimeDelta(self, current_min=timedelta.max):
-    """Assume there is at least one more element in front of the current
-    element."""
-    delta = self.next.record.datetime - self.record.datetime
-    if delta < current_min:
-      logger.info(
-        "User #{0} has new smaller time delta ({1}) found between"
-        "\n\t{2} and\n\t{3}".format(
-        self.record.user,
-        delta,
-        self.record,
-        self.next.record,
-      ))
-      current_min = delta
-
-    if self.next.next is None:
-      return current_min
-
-    else:
-      return self.next.getMinTimeDelta(current_min=current_min)
-
 
   def insertBefore(self, record):
     n = LinkedRecords()
