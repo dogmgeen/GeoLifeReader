@@ -32,12 +32,6 @@ def get_arguments():
     help='Directory containing PLT files (default: current working directory)',
     type=geolife.find_geolife_root,
   )
-  parser.add_argument(
-    '-w', '--weekday',
-    dest="weekday",
-    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
-    default=None,
-  )
 
   args = parser.parse_args()
   return args
@@ -47,15 +41,6 @@ if __name__ == "__main__":
   args = get_arguments()
   directory = args.input_directory
   logger.info("Loading database with raw Geolife records")
-  
-  if args.weekday is None:
-    logger.info("All weekdays")
-    weekday = None
-
-  else:
-    weekday = int(args.weekday)
-    logger.info("Weekday: {0}".format(record.WEEKDAY_STRINGS[weekday]))
-
   logger.info("Source:  {0}".format(directory))
   
   engine = config.getEngine()
@@ -74,8 +59,7 @@ if __name__ == "__main__":
   for u in user.from_directory(directory):
     logger.info("Beginning yielding of records from user {0.id}".format(u))
     for f in u.files:
-      f.restrictRecordsTo(weekday=weekday, aoi=config.BEIJING_80)
-      if weekday is None or f.occursOn(weekday):
+          f.restrictRecordsTo(aoi=config.BEIJING_80)
           session.add_all(f)
           session.commit()
 

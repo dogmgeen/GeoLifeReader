@@ -19,17 +19,11 @@ class GeoLifeFile:
     self.url = url
     self.weekday_counts = defaultdict(int)
 
-  def restrictRecordsTo(self, aoi, weekday=None):
-    self.active_weekday = weekday
+  def restrictRecordsTo(self, aoi):
     self.latitude_min = aoi['south']
     self.latitude_max = aoi['north']
     self.longitude_min = aoi['west']
     self.longitude_max = aoi['east']
-
-  def occursOn(self, weekday):
-    filename = os.path.basename(self.url).split(".")[0]
-    date_from_filename = datetime.strptime(filename, FILENAME_DATE_FMT)
-    return (date_from_filename.weekday() == weekday)
 
   def __iter__(self):
     with open(self.url) as f:
@@ -47,10 +41,6 @@ class GeoLifeFile:
           self.latitude_min < float(entry["lat"]) < self.latitude_max,
           self.longitude_min < float(entry["long"]) < self.longitude_max,
         ]
-        if self.active_weekday is not None:
-          weekday = d.weekday()
-          valid_conditions.append(self.active_weekday == weekday)
-
         if all(valid_conditions):
           datetime_suffix = d.strftime("%Y%m%d")
 
