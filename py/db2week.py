@@ -113,7 +113,7 @@ def putWeekAndDayStatistics(user, start, end, unique_id, session):
       RawRecord.user == user, RawRecord.date == start+timedelta(days=weekday)
     ).count()
     logger.debug("Day {0} has {1} records".format(weekday, weekday_count))
-    weekday_counts.append(weekday_counts)
+    weekday_counts.append(weekday_count)
   """
   session.add(WeekSynthesizedUser(
     id=new_user_id,
@@ -130,6 +130,7 @@ def putWeekAndDayStatistics(user, start, end, unique_id, session):
   ))
   """
   logger.debug("Record added to database\n" + 80*"-")
+  return weekday_counts
  
 
 def makeUniqueUserID(current_user_id, unique_id):
@@ -151,8 +152,11 @@ if __name__ == "__main__":
   first_monday = getPreviousMonday(min_date)
   max_date = getMaxDate(u, session)
   last_sunday = getNextSunday(max_date)
+  total_days = (last_sunday - first_monday).days + 1 #(max_date - min_date).days
+  logger.info("Total of {0} days spanned".format(total_days))
 
   week_number = 1
+  days_of_activity = 0
   current_monday = first_monday
   while current_monday < last_sunday:
     current_sunday = getNextSunday(current_monday)
@@ -160,11 +164,12 @@ if __name__ == "__main__":
     # For this user during this week, make a record that details the number of
     #  records throughout the week, and the number of records per day in this
     #  week.
-    putWeekAndDayStatistics(
+    weekday_counts = putWeekAndDayStatistics(
       user=u, start=current_monday, end=current_sunday, unique_id=week_number,
       session=session
     )
 
+    if weekday_counts is not None:
     # Modify the trajectory for this current week and this current user. This
     #  trajectory should be owned by a new unique user, and its timestamps
     #  should be during a reference week offset by the day-of-week of the
@@ -178,10 +183,16 @@ if __name__ == "__main__":
     #     Current week of user's activity := 5th week
     #     Original user ID: 314
     #     Altered user ID: 5314
-    alterTimestampsAndReassignTrajectory(
-      user=u, start=current_monday, end=current_sunday, unique_id=week_number,
-      session=session
-    )
+      alterTimestampsAndReassignTrajectory(
+        user=u, start=current_monday, end=current_sunday,
+        unique_id=week_number, session=session
+      )
 
-    week_number += 1
+      week_number += 1
+      days_of_activity += len([c for c in weekday_counts if c != 0])
+
     current_monday = current_sunday + timedelta(days=1)
+  logger.info("Of {0} days spanned, {1} days feature activity ({3:.3%} of activity, {2:.3%} of inactivity).".format(
+    total_days, days_of_activity, 1-(days_of_activity/float(total_days)),
+    days_of_activity/float(total_days)
+  ))
