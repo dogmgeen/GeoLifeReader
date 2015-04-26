@@ -5,7 +5,6 @@ import csv
 from utils import timestamp2datetime
 from utils import convertToBeijingTime
 from record import RawRecord as GeoLifeRecord
-from collections import defaultdict
 from datetime import datetime
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
@@ -16,7 +15,7 @@ class GeoLifeFile:
     logger.debug("Initializing GeoLifeFile at {0}".format(url))
     self.user = user.id
     self.url = url
-    self.weekday_counts = defaultdict(int)
+    self.count = 0
 
   def restrictRecordsTo(self, aoi):
     self.latitude_min = aoi['south']
@@ -41,22 +40,16 @@ class GeoLifeFile:
           self.longitude_min < float(entry["long"]) < self.longitude_max,
         ]
         if all(valid_conditions):
-          datetime_suffix = d.strftime("%Y%m%d")
-
-          new_user_id = int("{0}{1}".format(datetime_suffix, self.user))
-          key = (new_user_id, d.weekday())
-
-          self.weekday_counts[key] += 1
+          self.count += 1
           yield GeoLifeRecord(
-            user=new_user_id,
+            user=self.user,
             latitude=entry["lat"],
             longitude=entry["long"],
             time=d.time(),
             date=d,
           )
-
-        else:
-          pass
+      if self.count == 0:
+        logger.info("### No records within extent")
 
 
 def load_from_directory(directory, user):

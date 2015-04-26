@@ -1,5 +1,5 @@
 from raw.record import GeoLifeUser
-from raw.record import WRecord
+from raw.record import RawRecord as WRecord
 from sqlalchemy import create_engine
 from schema import HomogenizedGeoLifeUser
 from schema import HomogenizedRecord

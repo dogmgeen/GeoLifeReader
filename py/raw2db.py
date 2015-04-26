@@ -13,7 +13,6 @@ import argparse
 import os
 import geolife
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Index
 from raw import record
 from raw import user
 from utils import ETACalculator
@@ -55,44 +54,37 @@ if __name__ == "__main__":
   logger.info("Table initialized")
 
   timer = ETACalculator(iterations=geolife.get_num_files(directory))
-  user_weekday_counts = defaultdict(int)
+  user_counts = defaultdict(int)
   for u in user.from_directory(directory):
     logger.info("Beginning yielding of records from user {0.id}".format(u))
     for f in u.files:
-          f.restrictRecordsTo(aoi=config.BEIJING_80)
-          session.add_all(f)
-          session.commit()
+      f.restrictRecordsTo(aoi=config.BEIJING_80)
+      session.add_all(f)
+      session.commit()
 
-          # Now that this file has been read, the user-date-file information
-          #  has been populated.
-          synthesized_users_in_file = 0
-          for user_id in f.weekday_counts:
-            user_weekday_counts[user_id] += f.weekday_counts[user_id]
-            synthesized_users_in_file += 1
-          logger.info("File {0} has {1} synthesized users, who will be summarized in db".format(
-            os.path.basename(f.url), synthesized_users_in_file
-          ))
+      if f.count:
+        user_counts[u.id] += f.count
 
-          timer.checkpoint()
-          logger.info("="*60)
-          logger.info("File {0}".format(os.path.basename(f.url)))
-          logger.info(timer.eta())
+      logger.info("File {0} has {1} records".format(
+        os.path.basename(f.url), f.count
+      ))
+
+      timer.checkpoint()
+      logger.info(timer.eta())
+      logger.info("="*60)
 
   # Create an index on the time values
-  logger.info("Creating index on raw record time columns")
-  Index('raw_time', record.WRecord.__table__.c.time)
+  #logger.info("Creating index on raw record time columns")
+  #Index('raw_time_idx', record.RawRecord.__table__.c.time)
 
   # Store the user-date-count information.
-  user_weekday_counts_db = []
-  for key in user_weekday_counts:
-        weekday_counts = user_weekday_counts[key]
-        user_id, weekday = key
-        user_weekday_counts_db.append(record.GeoLifeUser(
-            id=user_id,
-            count=weekday_counts,
-            weekday=weekday,
-        ))
+  user_counts_db = []
+  for key in user_counts:
+    user_counts_db.append(record.GeoLifeUser(
+      id=key, count=user_counts[key],
+    ))
+    logger.info("User {0} has {1} records".format(key, user_counts[key]))
 
-  session.add_all(user_weekday_counts_db)
+  session.add_all(user_counts_db)
   session.commit()
 
