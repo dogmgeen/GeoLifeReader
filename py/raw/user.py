@@ -4,7 +4,7 @@ import os
 import pltfile
 from collections import defaultdict
 from record import LinkedRecords
-from record import WRecord as GeoLifeRecord
+#from record import WRecord as GeoLifeRecord
 from utils import datetimerange
 from sqlalchemy import update
 

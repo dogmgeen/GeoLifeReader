@@ -6,59 +6,56 @@ from sqlalchemy import Integer
 from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Time
+from sqlalchemy import Date
 from sqlalchemy import SmallInteger
 from datetime import timedelta
 import random
 
-WEEKDAY_STRINGS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-]
 
 Base = declarative_base()
-class WRecord(Base):
+class RawRecord(Base):
   __tablename__ = "records"
   id = Column(Integer, primary_key=True)
   user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
+  date = Column(Date)
   time = Column(Time)#, index=True)
-  weekday = Column(SmallInteger)
-
-  MONDAY = 0
-  TUESDAY = 1
-  WEDNESDAY = 2
-  THURSDAY = 3
-  FRIDAY = 4
-  SATURDAY = 5
-  SUNDAY = 6
-  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
 
   def __repr__(self):
-    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), time={3})>".format(
+    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), date={4}, time={3})>".format(
       self.user, self.latitude, self.longitude,
-      self.time
+      self.time, self.date
     )
+
 
 class GeoLifeUser(Base):
   __tablename__ = "users"
   id = Column(BigInteger, primary_key=True)
   count = Column(Integer)
-  weekday = Column(SmallInteger)
+
+
+class WeekSynthesizedUser(Base):
+  __tablename__ = "week_synthesized_user"
+  id = Column(BigInteger, primary_key=True)
+  centroid_lat = Column(Float)
+  centroid_long = Column(Float)
+  week_count = Column(Integer)
+  monday_count = Column(Integer)
+  tuesday_count = Column(Integer)
+  wednesday_count = Column(Integer)
+  thursday_count = Column(Integer)
+  friday_count = Column(Integer)
+  saturday_count = Column(Integer)
+  sunday_count = Column(Integer)
 
 
 def initialize_table(engine):
   Base.metadata.create_all(engine)
 
-def getUserSubset(n, weekday, session, randomize=False):
-  records = session.query(GeoLifeUser.id).filter(
-    GeoLifeUser.weekday == weekday
-  ).order_by(GeoLifeUser.id).all()
+
+def getUserSubset(n, session, randomize=False):
+  records = session.query(GeoLifeUser.id).all()
   users = [r for r, in records]
   if n is None:
     return users
@@ -167,6 +164,3 @@ class LinkedRecords:
 
       current.record = None
 
-
-def getExtent(x1, x2, y1, y2):
-  return (min(x1, x2), max(x1, x2), min(y1, y2), max(y1, y2))

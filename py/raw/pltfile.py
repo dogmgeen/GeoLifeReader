@@ -4,8 +4,7 @@ import os
 import csv
 from utils import timestamp2datetime
 from utils import convertToBeijingTime
-#from record import GeoLifeRecord
-from record import WRecord as GeoLifeRecord
+from record import RawRecord as GeoLifeRecord
 from collections import defaultdict
 from datetime import datetime
 
@@ -53,7 +52,7 @@ class GeoLifeFile:
             latitude=entry["lat"],
             longitude=entry["long"],
             time=d.time(),
-            weekday=d.weekday(),
+            date=d,
           )
 
         else:
@@ -62,6 +61,7 @@ class GeoLifeFile:
 
 def load_from_directory(directory, user):
   return [GeoLifeFile(url=f, user=user) for f in get_plt_files(directory)]
+
 
 # Recursively search the input directory for PLT files, and build a list
 #  of absolute paths for these files.
