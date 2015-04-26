@@ -1,15 +1,36 @@
+import logging
+logging.basicConfig(
+  level=logging.DEBUG,
+  filename='/tmp/db2week.log',
+  filemode='w'
+)
+logger = logging.getLogger("geolife")
+stdout = logging.StreamHandler()
+stdout.setLevel(logging.DEBUG)
+logger.addHandler(stdout)
+
 import config
+from sqlalchemy import Index
+from sqlalchemy.orm import sessionmaker
 from raw.record import RawRecord
 from raw.record import GeoLifeUser as RawUser
 from raw.record import WeekSynthesizedUser
+from datetime import timedelta
 
 engine = config.getEngine()
+try:
+  Index('rawrecord_date_idx', RawRecord.date).create(engine)
+  Index('rawrecord_lat_idx', RawRecord.latitude).create(engine)
+  Index('rawrecord_long_idx', RawRecord.longitude).create(engine)
+  Index('rawrecord_userdate_idx', RawRecord.user, RawRecord.date).create(engine)
+except:
+  pass
+
 Session = sessionmaker()
 Session.configure(bind=engine)
 
-def getMinDate(user):
-  session = Session()
-  result = session.query(RawRecord.date).filter(
+def getMinDate(user, session):
+  result, = session.query(RawRecord.date).filter(
     RawRecord.user == user,
   ).order_by(
     RawRecord.date
@@ -25,9 +46,8 @@ def getPreviousMonday(date_of_interest):
   return previous_monday
 
 
-def getMaxDate(user):
-  session = Session()
-  result = session.query(RawRecord.date).filter(
+def getMaxDate(user, session):
+  result, = session.query(RawRecord.date).filter(
     RawRecord.user == user,
   ).order_by(
     RawRecord.date.desc()
@@ -45,12 +65,12 @@ def getNextSunday(date_of_interest):
   #  6 - 0 = 6.
   #  Add 6 days to Monday and you get the next Sunday.
   next_sunday = date_of_interest + timedelta(days=6-current_weekday)
-  assert (next_sunday.weekday() == 6 and current_weekday <= next_sunday), "Miscalculation of previous Monday of {0}! Actually {1}".format(current_weekday, previous_monday)
+  assert (next_sunday.weekday() == 6 and date_of_interest <= next_sunday), "Miscalculation of previous Monday of {0}! Actually {1}".format(current_weekday, previous_monday)
   return next_sunday
 
 
 from sqlalchemy.sql import func
-def putWeekAndDayStatistics(user, start, end, unique_id):
+def putWeekAndDayStatistics(user, start, end, unique_id, session):
   # On the unique user database, calculate some statistics for each newly
   #  synthesized users. The statistics include, for a particular user:
   #    * Total number of records for that user's week of activity
@@ -65,35 +85,33 @@ def putWeekAndDayStatistics(user, start, end, unique_id):
   #
   #   
   # FROM users group by user;
-  session = Session()
   new_user_id = makeUniqueUserID(user, unique_id)
   logger.debug("User {0} within ({1}, {2}) => Synthesized user {3}".format(
     user, start, end, new_user_id
   ))
 
-  averages = session.query(
-    func.avg(RawRecords.latitude).label("centroid_lat"),
-    func.avg(RawRecords.longitude).label("centroid_long)
-  ).filter_by(
-    RawRecord.user=user, RawRecord.date >= start, RawRecord.date <= end
-  ).first()
-  logger.debug("Centroid location: ({centroid_lat}, {centroid_long})".format(**averages))
-
-  record_count = session.query(
-    func.count(RawRecords)
-  ).filter_by(
-    RawRecord.user=user, RawRecord.date >= start, RawRecord.date <= end
-  ).scalar()
+  record_count = session.query(RawRecord).filter(
+    RawRecord.user==user, RawRecord.date >= start, RawRecord.date <= end
+  ).count()
   logger.debug("Number of records: {0}".format(record_count))
+  if record_count == 0:
+    return
+
+  averages = session.query(
+    func.avg(RawRecord.latitude).label("centroid_lat"),
+    func.avg(RawRecord.longitude).label("centroid_long")
+  ).filter(
+    RawRecord.user==user, RawRecord.date >= start, RawRecord.date <= end
+  ).first()
+  logger.debug("Centroid location: ({0}, {1})".format(
+    averages.centroid_lat, averages.centroid_long
+  ))
 
   weekday_counts = []
   for weekday in range(7):
-    weekday_count = session.query(
-      func.count(RawRecords)
-    ).filter_by(
-      RawRecord.user=user, RawRecord.date >= start, RawRecord.date <= end,
-      RawRecord.weekday=weekday
-    ).scalar()
+    weekday_count = session.query(RawRecord).filter(
+      RawRecord.user == user, RawRecord.date == start+timedelta(days=weekday)
+    ).count()
     logger.debug("Day {0} has {1} records".format(weekday, weekday_count))
     weekday_counts.append(weekday_counts)
   """
@@ -118,22 +136,20 @@ def makeUniqueUserID(current_user_id, unique_id):
   return int("{0}{1}".format(unique_id, current_user_id))
 
 
-def alterTimestampsAndReassignTrajectory(user, start, end, unique_id):
-  session = Session()
+def alterTimestampsAndReassignTrajectory(user, start, end, unique_id, session):
   new_user_id = makeUniqueUserID(user, unique_id)
-
 
 
 if __name__ == "__main__":
  session = Session()
- users = session.query(RawUser.id).all()
- session.close()
+ users = session.query(RawUser.id)
 
- for u in users:
+ for u, in users:
+  logger.info("#"*80)
   logger.info("Current user: {0}".format(u))
-  min_date = getMinDate(u)
+  min_date = getMinDate(u, session)
   first_monday = getPreviousMonday(min_date)
-  max_date = getMaxDate(u)
+  max_date = getMaxDate(u, session)
   last_sunday = getNextSunday(max_date)
 
   week_number = 1
@@ -145,7 +161,8 @@ if __name__ == "__main__":
     #  records throughout the week, and the number of records per day in this
     #  week.
     putWeekAndDayStatistics(
-      user=u, start=current_monday, end=current_sunday, unique_id=week_number
+      user=u, start=current_monday, end=current_sunday, unique_id=week_number,
+      session=session
     )
 
     # Modify the trajectory for this current week and this current user. This
@@ -162,8 +179,9 @@ if __name__ == "__main__":
     #     Original user ID: 314
     #     Altered user ID: 5314
     alterTimestampsAndReassignTrajectory(
-      user=u, start=current_monday, end=current_sunday, unique_id=week_number
+      user=u, start=current_monday, end=current_sunday, unique_id=week_number,
+      session=session
     )
 
     week_number += 1
-    current_monday = current_sunday + timedelta(day=1)
+    current_monday = current_sunday + timedelta(days=1)
