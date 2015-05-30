@@ -31,6 +31,7 @@ def get_arguments():
     dest="input_directory",
     help='Directory containing PLT files (default: current working directory)',
     type=geolife.find_geolife_root,
+    required=True,
   )
   parser.add_argument(
     '-w', '--weekday',
