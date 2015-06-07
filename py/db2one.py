@@ -79,7 +79,7 @@ def get_arguments():
     dest="num_messages",
     help='Number of messages to create in total',
     type=int,
-    default=5000,
+    default=10000,
   )
   parser.add_argument(
     '-s', '--message-size',
@@ -114,7 +114,8 @@ def prepare_output(args):
     else:
       new_fileno = last_fileno + 1
 
-  return os.path.join(leaf_directory, "{0}.csv".format(new_fileno))
+  logger.info("Creating new output file at {0}".format("{0}.plt".format(new_fileno)))
+  return os.path.join(leaf_directory, "{0}.plt".format(new_fileno))
 
 
 def write_to_file(records, f, converter):
@@ -223,3 +224,4 @@ if __name__ == "__main__":
         'beta': 3.0,
         'sigma': 10,
       }))
+
