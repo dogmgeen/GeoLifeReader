@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
   # Create an index on the time values
   logger.info("Creating index on raw record time columns")
-  Index('raw_time', record.WRecord.__table__.c.time)
+  Index('raw_time', record.WRecord.__table__.c.time).create(engine)
 
   # Store the user-date-count information.
   user_weekday_counts_db = []
