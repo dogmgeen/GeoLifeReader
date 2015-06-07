@@ -187,6 +187,7 @@ if __name__ == "__main__":
   leaf_directory = os.path.dirname(one_movement_filepath)
   msgs_file = os.path.join(leaf_directory, "msgs.csv")
   interests_file = os.path.join(leaf_directory, "interests.csv")
+  interest_space_file = os.path.join(leaf_directory, "interestSpace.csv")
   descriptors_file = os.path.join(leaf_directory, "metadata.csv")
 
   msgs = messages.create(
@@ -202,6 +203,7 @@ if __name__ == "__main__":
     social_interests_per_user=5,
     metadata_descriptors_per_msg=4,
     social_interests_file=interests_file,
+    social_interests_space_file=interest_space_file,
     metadata_descriptors_file=descriptors_file
   )
 
@@ -220,8 +222,10 @@ if __name__ == "__main__":
         'date': WEEKDAY_STRINGS[weekday],
         'messages_file': msgs_file,
         'social_interests': interests_file,
+        'interest_space': interest_space_file,
         'message_metadata': descriptors_file,
         'beta': 3.0,
         'sigma': 10,
+        'max_host_addr': num_users-1,
       }))
 

@@ -58,10 +58,15 @@ class Messages:
       social_interests_per_user,
       metadata_descriptors_per_msg,
       social_interests_file,
-      metadata_descriptors_file):
+      metadata_descriptors_file,
+      social_interests_space_file,
+    ):
     # Create social interests
     logger.info("Creating {0} unique social interests".format(num_social_interests))
     social_interests = range(num_social_interests)
+    with open(social_interests_space_file, "w") as f:
+      for i in social_interests:
+        f.write("{0}\n".format(i)) 
 
     # Assign social interests to users
     for u in self.users:
