@@ -5,6 +5,7 @@ logger = logging.getLogger("geolife")
 #stdout.setLevel(logging.INFO)
 #logger.addHandler(stdout)
 
+from sqlalchemy import Index
 from datetime import timedelta
 from datetime import time
 from utils import timerange
@@ -196,6 +197,16 @@ if __name__ == "__main__":
 
       eta_til_completed_day.checkpoint()
       logger.info(eta_til_completed_day.eta())
+
+  # Create the indices needed for fast performance!
+  logger.info("Creating index on raw record time columns")
+  Index('homo_time', HomogenizedRecord.__table__.c.time).create(engine)
+  Index('homo_user', HomogenizedRecord.__table__.c.user).create(engine)
+  Index(
+    'homo_usertime',
+    HomogenizedRecord.__table__.c.time,
+    HomogenizedRecord.__table__.c.user
+  ).create(engine)
 
   #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
 
