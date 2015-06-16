@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("geolife")
 #stdout = logging.StreamHandler()
 #stdout.setLevel(logging.INFO)
@@ -30,9 +30,15 @@ Session.configure(bind=engine)
 
 def get_users_present_on(weekday):
   session = Session()
-  result_set = session.query(GeoLifeUser.id).filter(
-    GeoLifeUser.weekday == weekday
-  ).all()
+  query = session.query(GeoLifeUser.id)
+  if weekday is not None:
+    result_set = query.filter(
+      GeoLifeUser.weekday == weekday
+    ).all()
+
+  else:
+    result_set = query.all()
+
   users = set()
   for u, in result_set:
     users.add(u)
@@ -40,14 +46,17 @@ def get_users_present_on(weekday):
   session.close()
   return users
 
+
 class RecentUserRecord:
   def __init__(self, users):
     self.most_recent_record = {}
     
     s = Session()
+
     logger.info("Preloading RecentUserRecord object")
     records = s.query(WRecord).order_by(WRecord.time)
     eta = ETACalculator(len(users), name="Earliest User Records")
+
     for u in users:
       r = records.filter(WRecord.user == u).first()
       self.most_recent_record[u] = r
@@ -91,9 +100,10 @@ def get_arguments():
   parser.add_argument(
     '-w', '--weekday',
     dest="weekday",
-    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
+    help=('Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6'
+          ' is Sunday). Default: None (all weekdays will be accounted for).'),
     type=int,
-    default=0,
+    default=None,
   )
   parser.add_argument(
     '-d', '--time-delta',
@@ -101,6 +111,13 @@ def get_arguments():
     help="Number of seconds that should be between any two consecutive records",
     type=lambda x: timedelta(seconds=int(x)),
     default=timedelta(seconds=5),
+  )
+  parser.add_argument(
+    '-t', '--dry-run',
+    dest="dry_run",
+    action="store_true",
+    help=('Boolean indicator controlling if data should be added to the'
+          ' database (default: False).'),
   )
 
   args = parser.parse_args()
@@ -135,16 +152,21 @@ def verify_time_homogeniety(users, time_delta, db_session):
 
 if __name__ == "__main__":
   args = get_arguments()
+  dry_run = args.dry_run
   weekday = args.weekday
   delta = args.time_delta
 
-  initialize_table(engine)
+  # Create the Time Homogenized tables.
+  if not dry_run:
+    initialize_table(engine)
   session = Session()
 
   users = get_users_present_on(weekday)
-  most_recent_records = RecentUserRecord(users)
+
   logger.debug("#"*80)
-  logger.debug("Users for {0}: {1}".format(weekday, users))
+  logger.debug("Users selected: {0}".format(users))
+
+  most_recent_records = RecentUserRecord(users)
   users_present = set()
   homogenized_records = []
 
@@ -183,16 +205,17 @@ if __name__ == "__main__":
       logger.info("Adding {0} homogenized records to database".format(
         len(homogenized_records)
       ))
-      session.add_all([HomogenizedRecord(
-          user=r.user, latitude=r.latitude, longitude=r.longitude,
-          time=r.time, weekday=r.weekday,
-        ) for r in homogenized_records
-      ])
-      session.commit()
+      if not dry_run:
+        session.add_all([HomogenizedRecord(
+            user=r.user, latitude=r.latitude, longitude=r.longitude,
+            time=r.time, weekday=r.weekday,
+          ) for r in homogenized_records
+        ])
+        session.commit()
 
       users_present.clear()
 
-      assert len(homogenized_records) == len(users), "Number of homogenized recods {0} is not equal to the number of users {1}".format(len(homogenized_records), len(users))
+      assert len(homogenized_records) == len(users), "Number of homogenized records {0} is not equal to the number of users {1}".format(len(homogenized_records), len(users))
       del homogenized_records[:]
 
       eta_til_completed_day.checkpoint()
@@ -200,13 +223,14 @@ if __name__ == "__main__":
 
   # Create the indices needed for fast performance!
   logger.info("Creating index on raw record time columns")
-  Index('homo_time', HomogenizedRecord.__table__.c.time).create(engine)
-  Index('homo_user', HomogenizedRecord.__table__.c.user).create(engine)
-  Index(
-    'homo_usertime',
-    HomogenizedRecord.__table__.c.time,
-    HomogenizedRecord.__table__.c.user
-  ).create(engine)
+  if not dry_run:
+    Index('homo_time', HomogenizedRecord.__table__.c.time).create(engine)
+    Index('homo_user', HomogenizedRecord.__table__.c.user).create(engine)
+    Index(
+      'homo_usertime',
+      HomogenizedRecord.__table__.c.time,
+      HomogenizedRecord.__table__.c.user
+    ).create(engine)
 
   #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
 
