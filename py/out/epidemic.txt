@@ -1,0 +1,109 @@
+##############################################################################
+# Customize based on GeoLife dataset size
+Scenario.name = geolife-%%Group.router%%-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
+Group.router = EpidemicRouter
+
+Group.nrofHosts = 1312
+Scenario.endTime = 86399
+
+Group.bufferSize = 500M
+# Message TTL of 300 minutes (5 hours)
+Group.msgTtl = 300
+
+
+Events.nrof = 1
+
+# Randomly created messages.
+Events1.class = MessageEventGenerator
+Events1.hosts = 0,1311
+Events1.interval = 25
+Events1.size = 64k
+Events1.prefix = M
+
+# Externally created messages
+##Events1.class = ExternalEventsQueue
+##Events1.filePath = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/msgs.csv
+
+
+# External Movement model, defining movement based on GPS log. 
+Group.movementModel = ExternalMovement
+MovementModel.worldSize = 16199, 14399
+ExternalMovement.file = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/0.plt
+
+
+SANERouter.interestSpace = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interestSpace.csv
+SANERouter.interests = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interests.csv
+SANERouter.relayThreshold = 0.25
+SANERouter.replicas = 4
+
+
+ChitChatRouter.interests = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interests.csv
+ChitChatRouter.SocialPatternDecay.class = LogisticDecay
+ChitChatRouter.SocialPatternDecay.beta = 3.0
+ChitChatRouter.SocialPatternDecay.sigma = 10
+# If the message metadata file is not specified, then the message metadata is
+#   defaulted to the interests of the destination.
+##ChitChatRouter.messageMetadataFile = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/metadata.csv
+
+
+Report.nrofReports = 3
+# length of the warm up period (simulated seconds)
+Report.warmup = 0
+Report.reportDir = reports/
+Report.report1 = MessageStatsReport
+Report.report2 = BetterMessageReport
+Report.report3 = AdjacencyGraphvizReport
+
+
+#
+##############################################################################
+
+
+##############################################################################
+#
+# Default settings for the simulation
+#
+
+## Scenario settings
+Scenario.simulateConnections = true
+Scenario.updateInterval = 20
+
+
+## Interface-specific settings:
+# type : which interface class the interface belongs to
+# For different types, the sub-parameters are interface-specific
+# For SimpleBroadcastInterface, the parameters are:
+# transmitSpeed : transmit speed of the interface (bytes per second) 
+# transmitRange : range of the interface (meters)
+
+# "Bluetooth" interface for all nodes
+btInterface.type = SimpleBroadcastInterface
+# Transmit speed of 2 Mbps = 250kBps
+btInterface.transmitSpeed = 250k
+btInterface.transmitRange = 10
+
+Scenario.nrofHostGroups = 1
+
+# All nodes have the bluetooth interface
+Group.nrofInterfaces = 1
+Group.interface1 = btInterface
+
+# group1 (pedestrians) specific settings
+Group1.groupID = p
+
+# How many event generators
+
+## Default settings for some routers settings
+ProphetRouter.secondsInTimeUnit = 30
+SprayAndWaitRouter.nrofCopies = 6
+SprayAndWaitRouter.binaryMode = true
+
+## Optimization settings -- these affect the speed of the simulation
+## see World class for details.
+Optimization.cellSizeMult = 1
+Optimization.randomizeUpdateOrder = true
+
+# how many events to show in the log panel (default = 30)
+GUI.EventLogPanel.nrofEvents = 100
+# Regular Expression log filter (see Pattern-class from the Java API for RE-matching details)
+#GUI.EventLogPanel.REfilter = .*p[1-9]<->p[1-9]$
