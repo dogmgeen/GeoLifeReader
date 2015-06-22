@@ -208,7 +208,7 @@ if __name__ == "__main__":
   )
 
   # Create configuration file.
-  config_file = os.path.join(output_directory, CONFIG_FILE)
+  config_file = os.path.join(leaf_directory, CONFIG_FILE)
   logger.info("Writing out config file to {0}".format(config_file))
   with open(config_file, "w") as outfile:
     with open(CONFIG_TEMPLATE, 'r') as infile:
@@ -227,5 +227,6 @@ if __name__ == "__main__":
         'beta': 3.0,
         'sigma': 10,
         'max_host_addr': num_users-1,
+        'leaf_directory': leaf_directory,
       }))
 
