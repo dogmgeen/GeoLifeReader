@@ -114,7 +114,6 @@ def putWeekAndDayStatistics(user, start, end, unique_id, session):
     ).count()
     logger.debug("Day {0} has {1} records".format(weekday, weekday_count))
     weekday_counts.append(weekday_count)
-  """
   session.add(WeekSynthesizedUser(
     id=new_user_id,
     centroid_lat=averages.centroid_lat,
@@ -128,7 +127,6 @@ def putWeekAndDayStatistics(user, start, end, unique_id, session):
     saturday_count=weekday_counts[5],
     sunday_count=weekday_counts[6]
   ))
-  """
   logger.debug("Record added to database\n" + 80*"-")
   return weekday_counts
  
@@ -196,3 +194,4 @@ if __name__ == "__main__":
     total_days, days_of_activity, 1-(days_of_activity/float(total_days)),
     days_of_activity/float(total_days)
   ))
+  session.commit()
