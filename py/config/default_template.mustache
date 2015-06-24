@@ -1,7 +1,7 @@
 ##############################################################################
 # Customize based on GeoLife dataset size
 Scenario.name = geolife-%%Group.router%%-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
-Group.router = [EpidemicRouter; SANERouter; chitchat.ChitChatRouter]
+Group.router = [EpidemicRouter; SANERouter; chitchat.ChitChatRouter; DirectDeliveryRouter]
 
 Group.nrofHosts = {{num_hosts}}
 Scenario.endTime = {{duration}}
