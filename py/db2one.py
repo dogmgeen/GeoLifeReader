@@ -47,27 +47,6 @@ def get_arguments():
     description='Write out files for simulation.'
   )
   parser.add_argument(
-    '-o', '--output_directory',
-    dest="output_directory",
-    help='Directory to store created files (default: ./out)',
-    default="./out",
-    type=os.path.abspath,
-  )
-  parser.add_argument(
-    '-w', '--weekday',
-    dest="weekday",
-    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
-    type=int,
-    default=0,
-  )
-  parser.add_argument(
-    '-n', '--num-users',
-    dest="num_users",
-    help='Number of users to simulate',
-    type=int,
-    default=50,
-  )
-  parser.add_argument(
     '-d', '--time-delta',
     dest='time_delta',
     help="Number of seconds that should be between any two consecutive records",
@@ -75,18 +54,46 @@ def get_arguments():
     default=timedelta(seconds=5),
   )
   parser.add_argument(
-    '-m', '--num-messages',
-    dest="num_messages",
-    help='Number of messages to create in total',
+    '-i', '--interests-per-user',
+    dest="interests",
+    help='Number of social interests per user',
     type=int,
-    default=10000,
+    default=5,
   )
   parser.add_argument(
-    '-s', '--message-size',
-    dest="size",
-    help='Message size (bytes, default is 32KB)',
+    '-n', '--num-users',
+    dest="num_users",
+    help='Number of users to select from database',
     type=int,
-    default=32768,
+    default=50,
+  )
+  parser.add_argument(
+    '-m', '--message-freq',
+    dest="num_messages",
+    help='How frequently messages should be generated (e.g. every 5 seconds)',
+    type=int,
+    default=10,
+  )
+  parser.add_argument(
+    '-o', '--output_directory',
+    dest="output_directory",
+    help='Directory to store created files (default: ./out)',
+    default="./out",
+    type=os.path.abspath,
+  )
+  parser.add_argument(
+    '-s', '--space-dimensions',
+    dest="space",
+    help='Total unique social interests (i.e. the social interest space)',
+    type=int,
+    default=200,
+  )
+  parser.add_argument(
+    '-w', '--weekday',
+    dest="weekday",
+    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
+    type=int,
+    default=0,
   )
 
   args = parser.parse_args()
@@ -183,29 +190,7 @@ if __name__ == "__main__":
 
   # Create message files and configuration files.
   duration = int(timeDifferenceSeconds(time.max, time.min))
-  num_messages = args.num_messages
   leaf_directory = os.path.dirname(one_movement_filepath)
-  msgs_file = os.path.join(leaf_directory, "msgs.csv")
-  interests_file = os.path.join(leaf_directory, "interests.csv")
-  interest_space_file = os.path.join(leaf_directory, "interestSpace.csv")
-  descriptors_file = os.path.join(leaf_directory, "metadata.csv")
-
-  msgs = messages.create(
-    n=num_messages,
-    num_users=num_users,
-    duration=duration,
-    delta=delta,
-    size=args.size,
-  )
-  msgs.convertToONE(msgs_file)
-  msgs.createChitChatFiles(
-    num_social_interests=2*num_users,
-    social_interests_per_user=5,
-    metadata_descriptors_per_msg=4,
-    social_interests_file=interests_file,
-    social_interests_space_file=interest_space_file,
-    metadata_descriptors_file=descriptors_file
-  )
 
   # Create configuration file.
   config_file = os.path.join(leaf_directory, CONFIG_FILE)
@@ -220,12 +205,10 @@ if __name__ == "__main__":
         'max_y': converter.normalized_max_y,
         'external_movement_file': one_movement_filepath,
         'date': WEEKDAY_STRINGS[weekday],
-        'messages_file': msgs_file,
-        'social_interests': interests_file,
-        'interest_space': interest_space_file,
-        'message_metadata': descriptors_file,
-        'beta': 3.0,
-        'sigma': 10,
+        'message_freq': args.num_messages,
+        'social_interests': args.interests,
+        'interest_space': args.space,
+        'secondsToZero': 300,
         'max_host_addr': num_users-1,
         'leaf_directory': leaf_directory,
       }))

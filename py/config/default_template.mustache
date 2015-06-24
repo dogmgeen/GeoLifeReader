@@ -16,7 +16,7 @@ Events.nrof = 1
 # Randomly created messages.
 Events1.class = MessageEventGenerator
 Events1.hosts = 0,{{max_host_addr}}
-Events1.interval = 25
+Events1.interval = {{message_freq}}
 Events1.size = 64k
 Events1.prefix = M
 
@@ -31,16 +31,17 @@ MovementModel.worldSize = {{max_x}}, {{max_y}}
 ExternalMovement.file = {{external_movement_file}}
 
 
-SANERouter.interestSpace = {{interest_space}}
-SANERouter.interests = {{social_interests}}
+SANERouter.socialInterestSpaceDimensions = {{interest_space}}
+SANERouter.socialInterestsPerRouter = {{social_interests}}
 SANERouter.relayThreshold = 0.25
 SANERouter.replicas = 4
 
 
-ChitChatRouter.interests = {{social_interests}}
-ChitChatRouter.SocialPatternDecay.class = LogisticDecay
-ChitChatRouter.SocialPatternDecay.beta = {{beta}}
-ChitChatRouter.SocialPatternDecay.sigma = {{sigma}}
+ChitChatRouter.SocialPatternDecay.class = LinearDecay
+ChitChatRouter.SocialPatternDecay.secondsToZero = {{secondsToZero}}
+ChitChatRouter.socialInterestSpaceDimensions = {{interest_space}}
+ChitChatRouter.socialInterestsPerRouter = {{social_interests}}
+
 # If the message metadata file is not specified, then the message metadata is
 #   defaulted to the interests of the destination.
 ##ChitChatRouter.messageMetadataFile = {{message_metadata}}
