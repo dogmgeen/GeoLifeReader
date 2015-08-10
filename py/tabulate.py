@@ -1,7 +1,8 @@
 import os
 import argparse
 
-URL_FORMAT = "geolife-chitchat.ChitChatRouter-{interests}_of_{space}interests-1420users-500Mbuffer-300minTTL-10msgInterval_MessageStatsReport.txt"
+URL_FORMAT = "geolife-{router}-{interests}_of_{space}interests-{num_users}users-500Mbuffer-300minTTL-10msgInterval_MessageStatsReport.txt"
+#URL_FORMAT = "geolife-SANERouter-{interests}_of_{space}interests-1420users-500Mbuffer-300minTTL-10msgInterval_MessageStatsReport.txt"
 DELIMITER = ";"
 
 # Parse the command-line arguments.
@@ -23,6 +24,12 @@ def get_arguments():
     type=os.path.abspath,
     required=True
   )
+  parser.add_argument(
+    '-r', '--router',
+    dest='router',
+    default="chitchat.ChitChatRouter",
+    choices=['chitchat.ChitChatRouter', 'SANERouter'],
+  )
 
   args = parser.parse_args()
   return args
@@ -37,13 +44,17 @@ def getFromFile(url, key):
 
 if __name__ == "__main__":
   args = get_arguments()
+  num_users = int(os.path.basename(args.directory))
 
   print(DELIMITER + DELIMITER.join([str(r) for r in range(5, 55, 5)]))
   for spaceSize in range(20, 220, 20):
     line = str(spaceSize)
     for numberOfInterests in range(5, 55, 5):
       filename = URL_FORMAT.format(
-        interests=numberOfInterests, space=spaceSize
+        interests=numberOfInterests,
+        space=spaceSize,
+        router=args.router,
+        num_users=num_users
       )
       try:
         value = getFromFile(
