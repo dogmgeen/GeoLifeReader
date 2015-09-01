@@ -35,6 +35,7 @@ from one import ExternalMovementReaderConverter
 from utils import timeDifferenceSeconds
 import messages
 import pystache
+import csv
 
 Session = sessionmaker()
 engine = getEngine()
@@ -168,6 +169,7 @@ if __name__ == "__main__":
     decimal_degree_scaling_factor=DECIMAL_DEGREES_TO_GRID_SCALE,
     users=users
   )
+
   with open(one_movement_filepath, "w") as f:
     logger.info("Writing converted and normalized records to {0}".format(
       one_movement_filepath
@@ -192,6 +194,25 @@ if __name__ == "__main__":
   duration = int(timeDifferenceSeconds(time.max, time.min))
   leaf_directory = os.path.dirname(one_movement_filepath)
 
+  # Convert centroid files to show ONE user addresses, not the original
+  #  addresses.
+  centroidFileUrl = os.path.join(leaf_directory, "centroids.csv")
+  with open(centroidFileUrl, 'w') as finalizedCentroidFile:
+    fieldnames = ['user', 'lat', 'long']
+    writer = csv.DictWriter(finalizedCentroidFile, fieldnames=fieldnames)
+    writer.writeheader()
+
+    with open("centroids.csv") as originalCentroidFile:
+      reader = csv.DictReader(originalCentroidFile)
+      for row in reader:
+        userID = long(row['user'])
+        if userID in converter.user_to_addr_map:
+          writer.writerow({
+            "user": converter.user_to_addr_map[long(row['user'])],
+            "lat": row['lat'],
+            "long": row['long'],
+          })
+
   # Create configuration file.
   config_file = os.path.join(leaf_directory, CONFIG_FILE)
   logger.info("Writing out config file to {0}".format(config_file))
@@ -199,6 +220,7 @@ if __name__ == "__main__":
     with open(CONFIG_TEMPLATE, 'r') as infile:
       outfile.write(pystache.render(
         infile.read(), {
+        'centroidFile': centroidFileUrl,
         'num_hosts': num_users,
         'duration': duration,
         'max_x': converter.normalized_max_x,
@@ -212,4 +234,3 @@ if __name__ == "__main__":
         'max_host_addr': num_users-1,
         'leaf_directory': leaf_directory,
       }))
-

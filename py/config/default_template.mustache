@@ -14,7 +14,8 @@ Group.msgTtl = 300
 Events.nrof = 1
 
 # Randomly created messages.
-Events1.class = MessageEventGenerator
+Events1.class = ProximityMessageEventGenerator
+Events1.centroidsFile = {{centroidFile}}
 Events1.hosts = 0,{{max_host_addr}}
 Events1.interval = {{message_freq}}
 Events1.size = 64k
