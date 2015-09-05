@@ -4,9 +4,19 @@ import os
 import pltfile
 from collections import defaultdict
 from record import LinkedRecords
-from record import WRecord as GeoLifeRecord
+from record import RawRecord
+from record import GeoLifeUser
 from utils import datetimerange
 from sqlalchemy import update
+
+
+def from_directory(directory):
+  users = []
+  for d in os.listdir(directory):
+    if os.path.isdir(os.path.join(directory, d)):
+      logger.debug("Yielding user {0}".format(d))
+      yield GeoLifeUserFromFile(user_id=d, directory=directory)
+
 
 class BaseGeoLifeUser:
   def __init__(self):
@@ -46,15 +56,13 @@ class GeoLifeUserFromFile(BaseGeoLifeUser):
       directory=os.path.join(directory, user_id),
       user=self
     )
+    self.num_records = 0
 
-def from_directory(directory):
-  users = []
-  for d in os.listdir(directory):
-    if os.path.isdir(os.path.join(directory, d)):
-      logger.debug("Yielding user {0}".format(d))
-      yield GeoLifeUserFromFile(user_id=d, directory=directory)
+  def to_DB(self):
+    return GeoLifeUser(id=self.id, count=self.num_records)
 
 
+"""
 class GeoLifeUserFromDB(BaseGeoLifeUser):
   def __init__(self):
     BaseGeoLifeUser.__init__(self)
@@ -156,7 +164,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
         logger.debug("Current record falls outside window.")
         logger.debug("Generating a new record with current timestamp.")
         logger.debug("Base record: {0}".format(reference_record))
-        modified_record = GeoLifeRecord(
+        modified_record = RawRecord(
           user=reference_record.user,
           latitude=reference_record.latitude,
           longitude=reference_record.longitude,
@@ -233,7 +241,6 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       actual_delta = current.getTimeDeltaWithNextNode()
 
       if expected_delta != actual_delta:
-        """
         c = current
         for i in range(5):
           logger.debug(" "*80 + str(c.record))
@@ -251,7 +258,6 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
           c = c.prev
           if c is None:
             break
-        """
         logger.error("Following records do not have expected time delta of"
                      " {0}\n\t{1}\n\t{2}".format(
                        expected_delta,
@@ -267,7 +273,7 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
     return self.linked_list.extent
 
   def getRecordOn(self, timestamp):
-    """Assume the timestamps are incrementing upward at a regular interval"""
+    #Assume the timestamps are incrementing upward at a regular interval
     assert self.record_ptr.record.datetime == timestamp, (
       "Record {0} does not have expected timestamp of {1}".format(
       self.record_ptr.record, timestamp
@@ -310,4 +316,4 @@ def from_Query(query, normalize_ids):
       i += 1
 
   return users_list
-
+"""
