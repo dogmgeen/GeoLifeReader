@@ -7,40 +7,22 @@ from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Time
 from sqlalchemy import SmallInteger
+from sqlalchemy import Date
 from datetime import timedelta
 import random
 
-WEEKDAY_STRINGS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-]
-
 Base = declarative_base()
-class WRecord(Base):
-  __tablename__ = "records"
+class RawRecord(Base):
+  __tablename__ = "raw_records"
   id = Column(Integer, primary_key=True)
   user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)
   time = Column(Time)#, index=True)
-  weekday = Column(SmallInteger)
-
-  MONDAY = 0
-  TUESDAY = 1
-  WEDNESDAY = 2
-  THURSDAY = 3
-  FRIDAY = 4
-  SATURDAY = 5
-  SUNDAY = 6
-  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+  date = Column(Date)
 
   def __repr__(self):
-    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), time={3})>".format(
+    return "<RawRecord(name={0}, (x,y)=({1}, {2}), time={3})>".format(
       self.user, self.latitude, self.longitude,
       self.time
     )
@@ -49,7 +31,6 @@ class GeoLifeUser(Base):
   __tablename__ = "users"
   id = Column(BigInteger, primary_key=True)
   count = Column(Integer)
-  weekday = Column(SmallInteger)
 
 
 def initialize_table(engine):
