@@ -77,3 +77,13 @@ if __name__ == "__main__":
   logger.info("Creating index on raw record time columns")
   Index('raw_time', record.RawRecord.__table__.c.time).create(engine)
 
+  engine.execute("""
+    CREATE VIEW day_records_view 
+    AS SELECT
+      latitude as lat,
+      longitude as long,
+      time as timestamp,
+      "user" as old_user_id,
+      concat(to_char(date, 'IYYYMMDD'), "user") as new_user_id
+    from raw_records;
+  """)
