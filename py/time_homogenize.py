@@ -6,6 +6,9 @@ logger = logging.getLogger("geolife")
 #logger.addHandler(stdout)
 
 from sqlalchemy import Index
+from sqlalchemy import Table
+from sqlalchemy import MetaData
+
 from datetime import timedelta
 from datetime import time
 from utils import timerange
@@ -13,8 +16,6 @@ from utils import timeAdd
 from utils import ETACalculator
 from utils import timeDifferenceSeconds
 from utils import num_elements_in_time_range
-from raw.record import GeoLifeUser
-from raw.record import WRecord
 from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
@@ -27,17 +28,20 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker()
 Session.configure(bind=engine)
 
+metadata = MetaData()
+RecordsOnOneDay = Table(
+  'day_records_view', metadata, autoload=True, autoload_with=engine
+)
 
-def get_users_present_on(weekday):
+print("#"*40)
+for c in RecordsOnOneDay.columns:
+  print(c)
+print("#"*40)
+"""
+def get_users():
   session = Session()
   query = session.query(GeoLifeUser.id)
-  if weekday is not None:
-    result_set = query.filter(
-      GeoLifeUser.weekday == weekday
-    ).all()
-
-  else:
-    result_set = query.all()
+  result_set = query.all()
 
   users = set()
   for u, in result_set:
@@ -98,14 +102,6 @@ def get_arguments():
     description='Homogenize time deltas between records.'
   )
   parser.add_argument(
-    '-w', '--weekday',
-    dest="weekday",
-    help=('Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6'
-          ' is Sunday). Default: None (all weekdays will be accounted for).'),
-    type=int,
-    default=None,
-  )
-  parser.add_argument(
     '-d', '--time-delta',
     dest='time_delta',
     help="Number of seconds that should be between any two consecutive records",
@@ -153,7 +149,6 @@ def verify_time_homogeniety(users, time_delta, db_session):
 if __name__ == "__main__":
   args = get_arguments()
   dry_run = args.dry_run
-  weekday = args.weekday
   delta = args.time_delta
 
   # Create the Time Homogenized tables.
@@ -161,7 +156,7 @@ if __name__ == "__main__":
     initialize_table(engine)
   session = Session()
 
-  users = get_users_present_on(weekday)
+  users = get_users()
 
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
@@ -233,4 +228,4 @@ if __name__ == "__main__":
     ).create(engine)
 
   #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
-
+"""
