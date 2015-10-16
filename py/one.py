@@ -21,8 +21,10 @@ class ExternalMovementReaderConverter:
 
     # Node addresses need to range from 0 to len(users)-1.
     self.user_to_addr_map = {}
-    for i in range(len(users)):
-      self.user_to_addr_map[users[i]] = i
+    i = 0
+    for u in users:
+      self.user_to_addr_map[long(u)] = i
+      i += 1
 
   def __call__(self, record):
     """Convert record to a normalized string format."""

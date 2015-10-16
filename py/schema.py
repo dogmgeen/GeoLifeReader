@@ -8,9 +8,19 @@ from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Time
 from sqlalchemy import SmallInteger
+from sqlalchemy import Table
+from sqlalchemy import distinct
+import random
+from sqlalchemy import MetaData
+metadata = MetaData()
+
+import config
+RecordsOnOneDay = Table(
+  'day_records_view', metadata, autoload=True, autoload_with=config.getEngine()
+)
+
 
 Base = declarative_base()
-
 class HomogenizedRecord(Base):
   __tablename__ = "time_homogenized"
   id = Column(Integer, primary_key=True)
@@ -18,21 +28,11 @@ class HomogenizedRecord(Base):
   latitude = Column(Float)
   longitude = Column(Float)
   time = Column(Time)
-  weekday = Column(SmallInteger)
-
-  MONDAY = 0
-  TUESDAY = 1
-  WEDNESDAY = 2
-  THURSDAY = 3
-  FRIDAY = 4
-  SATURDAY = 5
-  SUNDAY = 6
-  WEEKDAYS = [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
 
   def __repr__(self):
-    return "<WeekdayRecord(name={0}, (x,y)=({1}, {2}), datetime={3})>".format(
+    return "<HomogenizedTimeRecord(name={0}, (x,y)=({1}, {2}), time={3})>".format(
       self.user, self.latitude, self.longitude,
-      self.datetime
+      self.time
     )
 
 class HomogenizedGeoLifeUser(Base):
@@ -43,4 +43,23 @@ class HomogenizedGeoLifeUser(Base):
 
 def initialize_table(engine):
   Base.metadata.create_all(engine)
+
+
+def get_users(session):
+  query = session.query(distinct(RecordsOnOneDay.c.new_user_id))
+  result_set = query.all()
+
+  users = set()
+  for u, in result_set:
+    users.add(u)
+
+  return users
+
+
+def getUserSubset(n, session):
+  users = get_users(session)
+  if n is None:
+    return users
+  else:
+    return random.sample(users, n)
 

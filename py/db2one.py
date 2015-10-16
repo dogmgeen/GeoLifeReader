@@ -16,10 +16,9 @@ stdout.setLevel(logging.DEBUG)
 logger.addHandler(stdout)
 
 from schema import HomogenizedRecord
-from raw.record import getUserSubset
-from raw.record import WEEKDAY_STRINGS
+from schema import getUserSubset
 from config import getEngine
-from config import BEIJING_80
+from config import BEIJING
 from config import DECIMAL_DEGREES_TO_GRID_SCALE
 from config import CONFIG_TEMPLATE
 from config import CONFIG_FILE
@@ -33,7 +32,6 @@ from sqlalchemy.orm import sessionmaker
 import os
 from one import ExternalMovementReaderConverter
 from utils import timeDifferenceSeconds
-import messages
 import pystache
 import csv
 
@@ -48,6 +46,14 @@ def get_arguments():
     description='Write out files for simulation.'
   )
   parser.add_argument(
+    '-n', '--num-users',
+    dest='num_users',
+    help="Number of users to select from db",
+    type=int,
+    default=None,
+  )
+
+  parser.add_argument(
     '-d', '--time-delta',
     dest='time_delta',
     help="Number of seconds that should be between any two consecutive records",
@@ -55,18 +61,19 @@ def get_arguments():
     default=timedelta(seconds=5),
   )
   parser.add_argument(
+    '-o', '--output_directory',
+    dest="output_directory",
+    help='Directory to store created files (default: ./out)',
+    default="./out",
+    type=os.path.abspath,
+  )
+
+  parser.add_argument(
     '-i', '--interests-per-user',
     dest="interests",
     help='Number of social interests per user',
     type=int,
-    default=5,
-  )
-  parser.add_argument(
-    '-n', '--num-users',
-    dest="num_users",
-    help='Number of users to select from database',
-    type=int,
-    default=50,
+    default=25,
   )
   parser.add_argument(
     '-m', '--message-freq',
@@ -76,25 +83,11 @@ def get_arguments():
     default=10,
   )
   parser.add_argument(
-    '-o', '--output_directory',
-    dest="output_directory",
-    help='Directory to store created files (default: ./out)',
-    default="./out",
-    type=os.path.abspath,
-  )
-  parser.add_argument(
     '-s', '--space-dimensions',
     dest="space",
     help='Total unique social interests (i.e. the social interest space)',
     type=int,
     default=200,
-  )
-  parser.add_argument(
-    '-w', '--weekday',
-    dest="weekday",
-    help='Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6 is Sunday)',
-    type=int,
-    default=0,
   )
 
   args = parser.parse_args()
@@ -102,12 +95,8 @@ def get_arguments():
 
 
 def prepare_output(args):
-  weekday_dir = os.path.join(
-    args.output_directory, WEEKDAY_STRINGS[args.weekday]
-  )
-  leaf_directory = os.path.join(weekday_dir, str(args.num_users))
-  if not os.path.exists(leaf_directory):
-    os.makedirs(leaf_directory)
+  if not os.path.exists(args.output_directory):
+    os.makedirs(args.output_directory)
     new_fileno = 0
 
   else:
@@ -115,7 +104,7 @@ def prepare_output(args):
     #  filename.
     try:
       last_fileno = max([
-        int(f.split(".")[0]) for f in os.listdir(leaf_directory) if f.endswith(".plt")
+        int(f.split(".")[0]) for f in os.listdir(args.output_directory) if f.endswith(".plt")
       ])
     except:
       new_fileno = 0
@@ -123,7 +112,7 @@ def prepare_output(args):
       new_fileno = last_fileno + 1
 
   logger.info("Creating new output file at {0}".format("{0}.plt".format(new_fileno)))
-  return os.path.join(leaf_directory, "{0}.plt".format(new_fileno))
+  return os.path.join(args.output_directory, "{0}.plt".format(new_fileno))
 
 
 def write_to_file(records, f, converter):
@@ -138,19 +127,17 @@ if __name__ == "__main__":
     num_users = None
   else:
     num_users = args.num_users
-  weekday = args.weekday
   delta = args.time_delta
   output_directory = args.output_directory
   one_movement_filepath = prepare_output(args)
 
   logger.info("Exporting time-homogenized records from database")
   logger.info("Number of users to be written out: {0}".format(num_users))
-  logger.info("Weekday: {0}".format(WEEKDAY_STRINGS[weekday]))
   logger.info("Output directory: {0}".format(output_directory))
   logger.info("Time delta between records: {0}".format(delta))
   logger.info("Written movement file: {0}".format(one_movement_filepath))
 
-  users = getUserSubset(num_users, weekday, session, randomize=False)
+  users = getUserSubset(num_users, session)
   if len(users) < num_users:
     logger.warning("Instead of {0}, there are only {1} users in the"
                    " database.".format(num_users, len(users)))
@@ -165,7 +152,7 @@ if __name__ == "__main__":
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
   eta_til_completed = ETACalculator(n, "DB to ONE output")
   converter = ExternalMovementReaderConverter(
-    extent=BEIJING_80,
+    extent=BEIJING,
     decimal_degree_scaling_factor=DECIMAL_DEGREES_TO_GRID_SCALE,
     users=users
   )
@@ -226,7 +213,6 @@ if __name__ == "__main__":
         'max_x': converter.normalized_max_x,
         'max_y': converter.normalized_max_y,
         'external_movement_file': one_movement_filepath,
-        'date': WEEKDAY_STRINGS[weekday],
         'message_freq': args.num_messages,
         'social_interests': args.interests,
         'interest_space': args.space,

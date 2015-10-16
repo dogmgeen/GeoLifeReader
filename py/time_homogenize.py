@@ -1,14 +1,11 @@
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("geolife")
-#stdout = logging.StreamHandler()
-#stdout.setLevel(logging.INFO)
-#logger.addHandler(stdout)
+stdout = logging.StreamHandler()
+stdout.setLevel(logging.INFO)
+logger.addHandler(stdout)
 
 from sqlalchemy import Index
-from sqlalchemy import Table
-from sqlalchemy import MetaData
-
 from datetime import timedelta
 from datetime import time
 from utils import timerange
@@ -16,9 +13,11 @@ from utils import timeAdd
 from utils import ETACalculator
 from utils import timeDifferenceSeconds
 from utils import num_elements_in_time_range
+from schema import get_users
 from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
+from schema import RecordsOnOneDay
 import argparse
 
 import config
@@ -28,28 +27,6 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker()
 Session.configure(bind=engine)
 
-metadata = MetaData()
-RecordsOnOneDay = Table(
-  'day_records_view', metadata, autoload=True, autoload_with=engine
-)
-
-print("#"*40)
-for c in RecordsOnOneDay.columns:
-  print(c)
-print("#"*40)
-"""
-def get_users():
-  session = Session()
-  query = session.query(GeoLifeUser.id)
-  result_set = query.all()
-
-  users = set()
-  for u, in result_set:
-    users.add(u)
-
-  session.close()
-  return users
-
 
 class RecentUserRecord:
   def __init__(self, users):
@@ -58,35 +35,36 @@ class RecentUserRecord:
     s = Session()
 
     logger.info("Preloading RecentUserRecord object")
-    records = s.query(WRecord).order_by(WRecord.time)
+    records = s.query(RecordsOnOneDay).order_by(RecordsOnOneDay.c.timestamp)
     eta = ETACalculator(len(users), name="Earliest User Records")
 
     for u in users:
-      r = records.filter(WRecord.user == u).first()
+      r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
       self.most_recent_record[u] = r
       logger.info("First record for user {0}: {1}".format(u, r))
       eta.checkpoint()
       logger.info(eta.eta())
+
     s.close()
 
   def get(self, time, user):
-    logger.debug("Fetching closest record preceeding {0} for user {1}".format(
-      time, user
-    ))
+    #logger.debug("Fetching closest record preceeding {0} for user {1}".format(
+    #  time, user
+    #))
     if not user in self.most_recent_record:
-      logger.debug("Most recent record not available. Querying datebase.")
+      #logger.debug("Most recent record not available. Querying datebase.")
       s = Session()
-      r = s.query(WRecord).filter(
-        WRecord.time < t,
-        WRecord.user == u
-      ).order_by(WRecord.time).first()
+      r = s.query(RecordsOnOneDay).filter(
+        RecordsOnOneDay.c.timestamp < t,
+        RecordsOnOneDay.c.new_user_id == u
+      ).order_by(RecordsOnOneDay.c.timestamp).first()
       self.most_recent_record[user] = r
       s.close()
 
     else:
       r = self.most_recent_record[user]
 
-    logger.debug("Record: {0}".format(r))
+    #logger.debug("Record: {0}".format(r))
     return r
 
   def update(self, user, record):
@@ -96,6 +74,14 @@ class RecentUserRecord:
     ))
     self.most_recent_record[user] = record
 
+  def __repr__(self):
+    string_rep = ""
+    for u in self.most_recent_record:
+      r = self.most_recent_record[u]
+      string_rep = string_rep + "\n<{0}: User #{1}\tat ({2}, {3})>".format(
+        r.timestamp, r.new_user_id, r.lat, r.long
+      )
+    return string_rep
 
 def get_arguments():
   parser = argparse.ArgumentParser(
@@ -156,11 +142,10 @@ if __name__ == "__main__":
     initialize_table(engine)
   session = Session()
 
-  users = get_users()
+  users = get_users(session)
 
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
-
   most_recent_records = RecentUserRecord(users)
   users_present = set()
   homogenized_records = []
@@ -171,30 +156,30 @@ if __name__ == "__main__":
   for t in timerange(time.min, time.max, delta):
       logger.debug("="*60)
       logger.debug("Querying for time {0}".format(t))
-      record_set = session.query(WRecord).filter(
-        WRecord.time >= t,
-        WRecord.time < timeAdd(t, delta),
-        WRecord.user.in_(users)
-      ).order_by(WRecord.time).all()
+      record_set = session.query(RecordsOnOneDay).filter(
+        RecordsOnOneDay.c.timestamp >= t,
+        RecordsOnOneDay.c.timestamp < timeAdd(t, delta),
+        RecordsOnOneDay.c.new_user_id.in_(users)
+      ).order_by(RecordsOnOneDay.c.timestamp).all()
       
       i = 0
       for r in record_set:
-        if r.user not in users_present:
-          logger.debug("-"*40)
-          logger.debug("Record from DB: {0}".format(r))
-          users_present.add(r.user)
-          r.time = t
+        if r.new_user_id not in users_present:
+          #logger.debug("-"*40)
+          #logger.debug("Record from DB: {0}".format(r))
+          users_present.add(r.new_user_id)
+          r.timestamp = t
           homogenized_records.append(r)
-          most_recent_records.update(r.user, r)
+          most_recent_records.update(r.new_user_id, r)
           i += 1
       logger.debug("{0} records on {1}".format(i, t))
 
       users_not_present = users - users_present
       logger.debug("Users not present: {0}".format(users_not_present))
       for u in users_not_present:
-        logger.debug("+"*40)
+        #logger.debug("+"*40)
         most_recent_record = most_recent_records.get(t, u)
-        most_recent_record.time = t
+        most_recent_record.timestamp = t
         homogenized_records.append(most_recent_record)
 
       logger.info("Adding {0} homogenized records to database".format(
@@ -202,8 +187,8 @@ if __name__ == "__main__":
       ))
       if not dry_run:
         session.add_all([HomogenizedRecord(
-            user=r.user, latitude=r.latitude, longitude=r.longitude,
-            time=r.time, weekday=r.weekday,
+            user=r.new_user_id, latitude=r.lat, longitude=r.long,
+            time=r.timestamp,
           ) for r in homogenized_records
         ])
         session.commit()
@@ -227,5 +212,4 @@ if __name__ == "__main__":
       HomogenizedRecord.__table__.c.user
     ).create(engine)
 
-  #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
-"""
+  verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
