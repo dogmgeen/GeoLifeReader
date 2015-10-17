@@ -28,11 +28,20 @@ class ExternalMovementReaderConverter:
 
   def __call__(self, record):
     """Convert record to a normalized string format."""
+    xPos=int(self.scale*(record.longitude - self.min_x))
+    yPos=int(self.scale*(record.latitude - self.min_y))
+
+    if xPos < 0 or yPos < 0:
+      xPos=int(self.scale*(self.most_recent_record.longitude - self.min_x))
+      yPos=int(self.scale*(self.most_recent_record.latitude - self.min_y))
+
+    else:
+      self.most_recent_record = record
+
     return "{time} {id} {xPos} {yPos}".format(
       time=int(timeDifferenceSeconds(record.time, time.min)),
       id=self.user_to_addr_map[record.user],
-      xPos=int(self.scale*(record.longitude - self.min_x)),
-      yPos=int(self.scale*(record.latitude - self.min_y))
+      xPos=xPos, yPos=yPos,
     )
 
   def getHeader(self):

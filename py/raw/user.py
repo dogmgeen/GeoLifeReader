@@ -3,7 +3,6 @@ logger = logging.getLogger("geolife.user")
 import os
 import pltfile
 from collections import defaultdict
-from record import LinkedRecords
 from record import RawRecord
 from record import GeoLifeUser
 from utils import datetimerange
@@ -223,13 +222,6 @@ class GeoLifeUserFromDB(BaseGeoLifeUser):
       #session.add_all(self.synthesized_records)
       #session.commit()
       del self.synthesized_records[:]
-
-  def link_listify_records(self):
-    logger.info("Link listifying {0}".format(self))
-    self.linked_list = LinkedRecords(self.records)
-
-    # Have record_ptr point to the head of the linked list
-    self.record_ptr = self.linked_list
 
   def is_time_homogenized(self):
     logger.info("Verifying time homogenization for {0}".format(self))
