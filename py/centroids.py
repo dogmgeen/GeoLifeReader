@@ -36,16 +36,8 @@ def get_arguments():
   return args
 
 
-if __name__ == "__main__":
-  args = get_arguments()
-  dry_run = args.dry_run
-
-  # Only users for a particular day will be selected.
-  # If this argument is not specified, then all users will be selected.
-  session = Session()
-
+def createCentroids(session):
   users = get_users(session)
-
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
 
@@ -71,3 +63,15 @@ if __name__ == "__main__":
 
       eta.checkpoint()
       logger.info(eta.eta())
+
+
+if __name__ == "__main__":
+  args = get_arguments()
+  dry_run = args.dry_run
+
+  # Only users for a particular day will be selected.
+  # If this argument is not specified, then all users will be selected.
+  session = Session()
+  createCentroids(session, users)
+
+

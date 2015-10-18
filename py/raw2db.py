@@ -96,3 +96,6 @@ if __name__ == "__main__":
     config.BOUNDS['west'],
     config.BOUNDS['east'],
   ))
+
+  from centroids import createCentroids
+  createCentroids(session) 
