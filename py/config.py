@@ -22,6 +22,8 @@ BEIJING_80 = {
   "east": 116.4584,
 }
 
+BOUNDS = BEIJING
+
 TRACE_DESTINATION_DIRECTORY = "/home/djmvfb/one"
 TRACE_FILENAME_FORMAT = "geolife2one_{0}_{1}users.csv"
 DELTA = timedelta(seconds=5)

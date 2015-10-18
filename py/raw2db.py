@@ -85,5 +85,14 @@ if __name__ == "__main__":
       time as timestamp,
       "user" as old_user_id,
       concat(to_char(date, 'IYYYMMDD'), "user") as new_user_id
-    from raw_records;
-  """)
+      from raw_records
+      WHERE latitude > {0}
+      AND latitude < {1}
+      AND longitude > {2}
+      AND longitude < {3};
+  """.format(
+    config.BOUNDS['south'],
+    config.BOUNDS['north'],
+    config.BOUNDS['west'],
+    config.BOUNDS['east'],
+  ))

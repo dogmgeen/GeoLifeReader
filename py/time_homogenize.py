@@ -1,11 +1,12 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, filename='/tmp/geolife.timehomo.log')
 logger = logging.getLogger("geolife")
 stdout = logging.StreamHandler()
 stdout.setLevel(logging.INFO)
 logger.addHandler(stdout)
 
 from sqlalchemy import Index
+from sqlalchemy import and_
 from datetime import timedelta
 from datetime import time
 from utils import timerange
@@ -40,6 +41,11 @@ class RecentUserRecord:
 
     for u in users:
       r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
+
+      # If this node has no activity within the bounds, skip them.
+      if r is None:
+        continue
+
       self.most_recent_record[u] = r
       logger.info("First record for user {0}: {1}".format(u, r))
       eta.checkpoint()

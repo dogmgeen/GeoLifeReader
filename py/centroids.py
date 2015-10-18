@@ -6,8 +6,8 @@ logger = logging.getLogger("geolife")
 #logger.addHandler(stdout)
 
 from utils import ETACalculator
-from raw.record import GeoLifeUser
-from raw.record import WRecord
+from schema import get_users
+from schema import RecordsOnOneDay
 import argparse
 from sqlalchemy.sql import func
 import csv
@@ -20,36 +20,9 @@ Session = sessionmaker()
 Session.configure(bind=engine)
 
 
-def get_users_present_on(weekday):
-  session = Session()
-  query = session.query(GeoLifeUser.id)
-  if weekday is not None:
-    result_set = query.filter(
-      GeoLifeUser.weekday == weekday
-    ).all()
-
-  else:
-    result_set = query.all()
-
-  users = set()
-  for u, in result_set:
-    users.add(u)
-
-  session.close()
-  return users
-
-
 def get_arguments():
   parser = argparse.ArgumentParser(
     description='Extract centroids of user movements.'
-  )
-  parser.add_argument(
-    '-w', '--weekday',
-    dest="weekday",
-    help=('Numerical indicator of weekday (0 is Monday, 1 is Tuesday, ..., 6'
-          ' is Sunday). Default: None (all weekdays will be accounted for).'),
-    type=int,
-    default=None,
   )
   parser.add_argument(
     '-t', '--dry-run',
@@ -69,11 +42,9 @@ if __name__ == "__main__":
 
   # Only users for a particular day will be selected.
   # If this argument is not specified, then all users will be selected.
-  weekday = args.weekday
-
   session = Session()
 
-  users = get_users_present_on(weekday)
+  users = get_users(session)
 
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
@@ -87,9 +58,9 @@ if __name__ == "__main__":
 
     for u in users:
       centroid_of_movement = session.query(
-        func.avg(WRecord.latitude).label('lat'),
-        func.avg(WRecord.longitude).label('long'),
-      ).filter(WRecord.user==u).first()
+        func.avg(RecordsOnOneDay.c.lat).label('lat'),
+        func.avg(RecordsOnOneDay.c.long).label('long'),
+      ).filter(RecordsOnOneDay.c.new_user_id==u).first()
 
       print("User #{0} has centroid {1}".format(u, centroid_of_movement))
       writer.writerow({

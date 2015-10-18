@@ -18,7 +18,7 @@ logger.addHandler(stdout)
 from schema import HomogenizedRecord
 from schema import getUserSubset
 from config import getEngine
-from config import BEIJING
+from config import BOUNDS
 from config import DECIMAL_DEGREES_TO_GRID_SCALE
 from config import CONFIG_TEMPLATE
 from config import CONFIG_FILE
@@ -152,7 +152,7 @@ if __name__ == "__main__":
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
   eta_til_completed = ETACalculator(n, "DB to ONE output")
   converter = ExternalMovementReaderConverter(
-    extent=BEIJING,
+    extent=BOUNDS,
     decimal_degree_scaling_factor=DECIMAL_DEGREES_TO_GRID_SCALE,
     users=users
   )
