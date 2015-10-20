@@ -32,6 +32,7 @@ class GeoLifeUser(Base):
   __tablename__ = "users"
   id = Column(BigInteger, primary_key=True)
   count = Column(Integer)
+  earliest_record_time = Column(Time)
 
 
 def initialize_table(engine):

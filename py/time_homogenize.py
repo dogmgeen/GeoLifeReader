@@ -19,6 +19,7 @@ from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
 from schema import RecordsOnOneDay
+from raw.records import GeoLifeUser
 import argparse
 
 import config
@@ -40,6 +41,7 @@ class RecentUserRecord:
     eta = ETACalculator(len(users), name="Earliest User Records")
 
     for u in users:
+      count = records.filter(RecordsOnOneDay.c.new_user_id == u).count()
       r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
 
       # If this node has no activity within the bounds, skip them.
@@ -47,6 +49,10 @@ class RecentUserRecord:
         continue
 
       self.most_recent_record[u] = r
+
+      s.add( GeoLifeUser(id=u, count=, earliest_record_time=r.timestamp) )
+      s.commit()
+
       logger.info("First record for user {0}: {1}".format(u, r))
       eta.checkpoint()
       logger.info(eta.eta())
