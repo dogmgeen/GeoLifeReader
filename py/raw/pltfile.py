@@ -55,6 +55,9 @@ class GeoLifeFile:
             longitude=entry["long"],
             time=d.time(),
             date=d.date(),
+            date_user_id=long("{0}{1}".format(
+              d.strftime("%Y%m%d"), self.user
+            ))
         )
 
 

@@ -2,7 +2,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, filename='/tmp/geolife.timehomo.log')
 logger = logging.getLogger("geolife")
 stdout = logging.StreamHandler()
-stdout.setLevel(logging.INFO)
+stdout.setLevel(logging.DEBUG)
 logger.addHandler(stdout)
 
 from sqlalchemy import Index
@@ -147,8 +147,9 @@ if __name__ == "__main__":
   if not dry_run:
     initialize_table(engine)
   session = Session()
-
+  logger.info("Loading users...")
   users = get_users(session)
+  logger.info("User loading complete!")
 
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
@@ -218,4 +219,4 @@ if __name__ == "__main__":
       HomogenizedRecord.__table__.c.user
     ).create(engine)
 
-  verify_time_homogeniety(users=users, time_delta=delta, db_session=session)
+  #verify_time_homogeniety(users=users, time_delta=delta, db_session=session)

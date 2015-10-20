@@ -15,6 +15,7 @@ Base = declarative_base()
 class RawRecord(Base):
   __tablename__ = "raw_records"
   id = Column(Integer, primary_key=True)
+  date_user_id = Column(BigInteger)
   user = Column(BigInteger)#, index=True)
   latitude = Column(Float)
   longitude = Column(Float)

@@ -10,7 +10,9 @@ from schema import get_users
 from schema import RecordsOnOneDay
 import argparse
 from sqlalchemy.sql import func
+from sqlalchemy import Index
 import csv
+from raw import record
 
 import config
 engine = config.getEngine()
@@ -37,6 +39,11 @@ def get_arguments():
 
 
 def createCentroids(session):
+  logger.info("Creating index on raw record locations columns")
+  Index('raw_latitude', record.RawRecord.__table__.c.latitude).create(engine)
+  Index('raw_longitude', record.RawRecord.__table__.c.longitude).create(engine)
+  Index('raw_newnames', record.RawRecord.__table__.c.date_user_id).create(engine)
+
   users = get_users(session)
   logger.debug("#"*80)
   logger.debug("Users selected: {0}".format(users))
@@ -72,6 +79,6 @@ if __name__ == "__main__":
   # Only users for a particular day will be selected.
   # If this argument is not specified, then all users will be selected.
   session = Session()
-  createCentroids(session, users)
+  createCentroids(session)
 
 

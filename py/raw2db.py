@@ -84,7 +84,7 @@ if __name__ == "__main__":
       longitude as long,
       time as timestamp,
       "user" as old_user_id,
-      concat(to_char(date, 'IYYYMMDD'), "user") as new_user_id
+      date_user_id as new_user_id
       from raw_records
       WHERE latitude > {0}
       AND latitude < {1}
