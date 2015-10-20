@@ -19,7 +19,7 @@ from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
 from schema import RecordsOnOneDay
-from raw.records import GeoLifeUser
+from raw.record import GeoLifeUser
 import argparse
 
 import config
@@ -50,7 +50,7 @@ class RecentUserRecord:
 
       self.most_recent_record[u] = r
 
-      s.add( GeoLifeUser(id=u, count=, earliest_record_time=r.timestamp) )
+      s.add( GeoLifeUser(id=u, count=count, earliest_record_time=r.timestamp) )
       s.commit()
 
       logger.info("First record for user {0}: {1}".format(u, r))
