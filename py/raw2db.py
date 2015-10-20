@@ -14,12 +14,15 @@ import os
 import geolife
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Index
+from sqlalchemy.sql import func
 from raw import record
 from raw import user
 from utils import ETACalculator
 from collections import defaultdict
 import config
-
+from datetime import date
+from datetime import datetime
+from utils import get_users
 
 # Parse the command-line arguments.
 def get_arguments():
@@ -50,12 +53,14 @@ if __name__ == "__main__":
   Session = sessionmaker()
   Session.configure(bind=engine)
   session = Session()
+
   logger.info("-"*50)
   logger.info("Database will be created and populated from files"
               " in {0}".format(directory))
   record.initialize_table(engine)
   logger.info("Table initialized")
 
+  """
   timer = ETACalculator(iterations=geolife.get_num_files(directory))
   for u in user.from_directory(directory):
 
@@ -76,26 +81,80 @@ if __name__ == "__main__":
   # Create an index on the time values
   logger.info("Creating index on raw record time columns")
   Index('raw_time', record.RawRecord.__table__.c.time).create(engine)
+  Index('raw_latitude', record.RawRecord.__table__.c.latitude).create(engine)
+  Index('raw_longitude', record.RawRecord.__table__.c.longitude).create(engine)
+  Index('raw_newnames', record.RawRecord.__table__.c.date_user_id).create(engine)
+  """
+  #engine.execute("""
+  #  CREATE VIEW day_records_view 
+  #  AS SELECT
+  #    latitude as lat,
+  #    longitude as long,
+  #    time as timestamp,
+  #    "user" as old_user_id,
+  #    date_user_id as new_user_id
+  #    from raw_records
+  #    WHERE latitude > {0}
+  #    AND latitude < {1}
+  #    AND longitude > {2}
+  #    AND longitude < {3};
+  #""".format(
+  #  config.BOUNDS['south'],
+  #  config.BOUNDS['north'],
+  #  config.BOUNDS['west'],
+  #  config.BOUNDS['east'],
+  #))
+  
 
-  engine.execute("""
-    CREATE VIEW day_records_view 
-    AS SELECT
-      latitude as lat,
-      longitude as long,
-      time as timestamp,
-      "user" as old_user_id,
-      date_user_id as new_user_id
-      from raw_records
-      WHERE latitude > {0}
-      AND latitude < {1}
-      AND longitude > {2}
-      AND longitude < {3};
-  """.format(
-    config.BOUNDS['south'],
-    config.BOUNDS['north'],
-    config.BOUNDS['west'],
-    config.BOUNDS['east'],
-  ))
+  from schema import RecordsOnOneDay
 
-  from centroids import createCentroids
-  createCentroids(session) 
+  logger.info("Preloading RecentUserRecord object")
+  users = get_users(session)
+  records = session.query(RecordsOnOneDay).order_by(RecordsOnOneDay.c.timestamp)
+  eta = ETACalculator(len(users), name="Earliest User Records")
+  date_dummy = date.today()
+
+  dayusers = []
+  for u in users:
+      logger.info("Calculating the user's centroid of movement")
+      centroid_of_movement = session.query(
+        func.avg(RecordsOnOneDay.c.lat).label('lat'),
+        func.avg(RecordsOnOneDay.c.long).label('long'),
+      ).filter(RecordsOnOneDay.c.new_user_id==u).first()
+
+      count = records.filter(RecordsOnOneDay.c.new_user_id == u).count()
+      r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
+      last = session.query(RecordsOnOneDay).filter(
+        RecordsOnOneDay.c.new_user_id == u
+      ).order_by(
+        RecordsOnOneDay.c.timestamp.desc()
+      ).first()
+
+
+      # If this node has no activity within the bounds, skip them.
+      if r is None:
+        continue
+
+      latest_timestamp = datetime.combine(date_dummy, last.timestamp)
+      earliest_timestamp = datetime.combine(date_dummy, r.timestamp)
+      duration_seconds = latest_timestamp - earliest_timestamp
+
+      #dayusers.append(
+      session.add(
+        record.DayUser(
+        id=u, count=count,
+        earliest_record_time=r.timestamp,
+        latest_record_time=last.timestamp,
+        duration=(duration_seconds).total_seconds(),
+        centroid_lat=centroid_of_movement.lat,
+        centroid_lon=centroid_of_movement.long,
+      ))
+
+      logger.info("First record for user {0}: {1}".format(u, r))
+      eta.checkpoint()
+      logger.info(eta.eta())
+
+  #session.add_all(dayusers)
+  session.commit()
+  session.close()
+
