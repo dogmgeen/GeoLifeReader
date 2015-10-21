@@ -32,7 +32,17 @@ class GeoLifeUser(Base):
   __tablename__ = "users"
   id = Column(BigInteger, primary_key=True)
   count = Column(Integer)
+
+
+class DayUser(Base):
+  __tablename__ = "dayuser"
+  id = Column(BigInteger, primary_key=True)
   earliest_record_time = Column(Time)
+  latest_record_time   = Column(Time)
+  duration = Column(BigInteger)
+  count = Column(Integer)
+  centroid_lat = Column(Float)
+  centroid_lon = Column(Float)
 
 
 def initialize_table(engine):

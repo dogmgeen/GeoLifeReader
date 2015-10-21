@@ -9,11 +9,11 @@ from sqlalchemy import Float
 from sqlalchemy import Time
 from sqlalchemy import SmallInteger
 from sqlalchemy import Table
-from sqlalchemy import distinct
 import random
+
+
 from sqlalchemy import MetaData
 metadata = MetaData()
-
 import config
 RecordsOnOneDay = Table(
   'day_records_view', metadata, autoload=True, autoload_with=config.getEngine()
@@ -45,21 +45,4 @@ def initialize_table(engine):
   Base.metadata.create_all(engine)
 
 
-def get_users(session):
-  query = session.query(distinct(RecordsOnOneDay.c.new_user_id))
-  result_set = query.all()
-
-  users = set()
-  for u, in result_set:
-    users.add(u)
-
-  return users
-
-
-def getUserSubset(n, session):
-  users = get_users(session)
-  if n is None:
-    return users
-  else:
-    return random.sample(users, n)
 

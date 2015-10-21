@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 import os
 import pytz
+from sqlalchemy import distinct
 
 GEOLIFE_DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
@@ -58,6 +59,26 @@ def num_elements_in_time_range(start, end, step):
   timespan_seconds = timeDifferenceSeconds(start, end)
   step_seconds = step.total_seconds()
   return int(timespan_seconds/float(step_seconds))
+
+
+def get_users(session):
+  from schema import RecordsOnOneDay
+  query = session.query(distinct(RecordsOnOneDay.c.new_user_id))
+  result_set = query.all()
+
+  users = set()
+  for u, in result_set:
+    users.add(u)
+
+  return users
+
+
+def getUserSubset(n, session):
+  users = get_users(session)
+  if n is None:
+    return users
+  else:
+    return random.sample(users, n)
 
 
 class ETACalculator:

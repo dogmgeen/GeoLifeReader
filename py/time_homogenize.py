@@ -9,17 +9,18 @@ from sqlalchemy import Index
 from sqlalchemy import and_
 from datetime import timedelta
 from datetime import time
+from datetime import date
+from datetime import datetime
 from utils import timerange
 from utils import timeAdd
 from utils import ETACalculator
 from utils import timeDifferenceSeconds
 from utils import num_elements_in_time_range
-from schema import get_users
 from schema import HomogenizedRecord
 from schema import HomogenizedGeoLifeUser
 from schema import initialize_table
 from schema import RecordsOnOneDay
-from raw.record import GeoLifeUser
+from raw.record import DayUser
 import argparse
 
 import config
@@ -28,6 +29,14 @@ engine = config.getEngine()
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker()
 Session.configure(bind=engine)
+
+
+class FakeHomogenizedRecord:
+  def __init__(self, u, t, lat, lon):
+    self.timestamp = t
+    self.new_user_id = u
+    self.lat = lat
+    self.long = lon
 
 
 class RecentUserRecord:
@@ -41,17 +50,16 @@ class RecentUserRecord:
     eta = ETACalculator(len(users), name="Earliest User Records")
 
     for u in users:
-      count = records.filter(RecordsOnOneDay.c.new_user_id == u).count()
       r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
 
       # If this node has no activity within the bounds, skip them.
       if r is None:
         continue
 
-      self.most_recent_record[u] = r
-
-      s.add( GeoLifeUser(id=u, count=count, earliest_record_time=r.timestamp) )
-      s.commit()
+      mutable_record = FakeHomogenizedRecord(
+        u=r.new_user_id, t=r.timestamp, lat=r.lat, lon=r.long
+      )
+      self.most_recent_record[u] = mutable_record
 
       logger.info("First record for user {0}: {1}".format(u, r))
       eta.checkpoint()
@@ -80,10 +88,10 @@ class RecentUserRecord:
     return r
 
   def update(self, user, record):
-    logger.debug("Updating most recent record for user {0} from {1}"
-                 " to {2}".format(
-      user, self.most_recent_record[user], record,
-    ))
+    #logger.debug("Updating most recent record for user {0} from {1}"
+    #             " to {2}".format(
+    #  user, self.most_recent_record[user], record,
+    #))
     self.most_recent_record[user] = record
 
   def __repr__(self):
@@ -144,6 +152,7 @@ def verify_time_homogeniety(users, time_delta, db_session):
     eta.checkpoint()
     logger.info(eta.eta())
 
+
 if __name__ == "__main__":
   args = get_arguments()
   dry_run = args.dry_run
@@ -154,7 +163,10 @@ if __name__ == "__main__":
     initialize_table(engine)
   session = Session()
   logger.info("Loading users...")
-  users = get_users(session)
+  users = set([u for u, in session.query(DayUser.id).filter(and_(
+    DayUser.duration>7200,
+    DayUser.count>500,
+  )).all()])
   logger.info("User loading complete!")
 
   logger.debug("#"*80)
@@ -181,14 +193,16 @@ if __name__ == "__main__":
           #logger.debug("-"*40)
           #logger.debug("Record from DB: {0}".format(r))
           users_present.add(r.new_user_id)
-          r.timestamp = t
-          homogenized_records.append(r)
-          most_recent_records.update(r.new_user_id, r)
+          mutable_record = FakeHomogenizedRecord(
+            u=r.new_user_id, t=t, lat=r.lat, lon=r.long
+          )
+          homogenized_records.append(mutable_record)
+          most_recent_records.update(r.new_user_id, mutable_record)
           i += 1
       logger.debug("{0} records on {1}".format(i, t))
 
       users_not_present = users - users_present
-      logger.debug("Users not present: {0}".format(users_not_present))
+      logger.debug("Users not present: {0}".format(len(users_not_present)))
       for u in users_not_present:
         #logger.debug("+"*40)
         most_recent_record = most_recent_records.get(t, u)
