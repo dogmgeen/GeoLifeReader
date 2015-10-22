@@ -7,7 +7,7 @@
 import logging
 logging.basicConfig(
   level=logging.DEBUG,
-  filename='/tmp/geolife.log',
+  filename='/tmp/geolife.db2one.log',
   filemode='w'
 )
 logger = logging.getLogger("geolife")
@@ -16,7 +16,7 @@ stdout.setLevel(logging.DEBUG)
 logger.addHandler(stdout)
 
 from schema import HomogenizedRecord
-from schema import getUserSubset
+from raw.record import DayUser
 from config import getEngine
 from config import BOUNDS
 from config import DECIMAL_DEGREES_TO_GRID_SCALE
@@ -29,11 +29,13 @@ from utils import num_elements_in_time_range
 from datetime import time
 from datetime import timedelta
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import and_
 import os
 from one import ExternalMovementReaderConverter
 from utils import timeDifferenceSeconds
 import pystache
 import csv
+import random
 
 Session = sessionmaker()
 engine = getEngine()
@@ -111,13 +113,16 @@ def prepare_output(args):
     else:
       new_fileno = last_fileno + 1
 
-  logger.info("Creating new output file at {0}".format("{0}.plt".format(new_fileno)))
+  logger.info("Creating new output file at {0}".format(
+    "{0}.plt".format(new_fileno)
+  ))
   return os.path.join(args.output_directory, "{0}.plt".format(new_fileno))
 
 
 def write_to_file(records, f, converter):
   for r in records:
     f.write("{0}\n".format(converter(r)))
+
 
 if __name__ == "__main__":
   session = Session()
@@ -137,14 +142,14 @@ if __name__ == "__main__":
   logger.info("Time delta between records: {0}".format(delta))
   logger.info("Written movement file: {0}".format(one_movement_filepath))
 
-  users = getUserSubset(num_users, session)
-  if len(users) < num_users:
-    logger.warning("Instead of {0}, there are only {1} users in the"
-                   " database.".format(num_users, len(users)))
-    num_users = len(users)
+  users = [u for u, in session.query(DayUser.id).filter(and_(
+    DayUser.duration>7200,
+    DayUser.count>500,
+  )).all()]
+  if num_users is not None and len(users) >= num_users:
+    users = random.sample(users, num_users)
 
-  # num_users is None when all users are to be output
-  if num_users is None:
+  else:
     num_users = len(users)
 
   logger.info("Users selected: {0}".format(users))
@@ -178,7 +183,6 @@ if __name__ == "__main__":
       logger.info(eta_til_completed.eta())
 
   # Create message files and configuration files.
-  duration = int(timeDifferenceSeconds(time.max, time.min))
   leaf_directory = os.path.dirname(one_movement_filepath)
 
   # Convert centroid files to show ONE user addresses, not the original
@@ -189,18 +193,19 @@ if __name__ == "__main__":
     writer = csv.DictWriter(finalizedCentroidFile, fieldnames=fieldnames)
     writer.writeheader()
 
-    with open("centroids.csv") as originalCentroidFile:
-      reader = csv.DictReader(originalCentroidFile)
-      for row in reader:
-        userID = long(row['user'])
-        if userID in converter.user_to_addr_map:
-          writer.writerow({
-            "user": converter.user_to_addr_map[long(row['user'])],
-            "lat": row['lat'],
-            "long": row['long'],
-          })
+    user_info = session.query(DayUser).filter(
+      DayUser.id.in_(users)
+    )
+    for centroid_record in user_info:
+      userID = centroid_record.id
+      writer.writerow({
+        "user": converter.user_to_addr_map[userID],
+        "lat": centroid_record.centroid_lat,
+        "long": centroid_record.centroid_lon,
+      })
 
   # Create configuration file.
+  duration = int(timeDifferenceSeconds(time.max, time.min))
   config_file = os.path.join(leaf_directory, CONFIG_FILE)
   logger.info("Writing out config file to {0}".format(config_file))
   with open(config_file, "w") as outfile:
