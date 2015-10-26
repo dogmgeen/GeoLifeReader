@@ -1,14 +1,17 @@
 ##############################################################################
 # Customize based on GeoLife dataset size
-Scenario.name = geolife-%%Group.router%%-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
-Group.router = [EpidemicRouter; SANERouter; chitchat.ChitChatRouter; DirectDeliveryRouter]
+Scenario.name = geolife-%%Group.router%%-%%Events1.maxMetersBetweenNodes%%mMsgProx-%%btInterface.transmitRange%%mCommRadius-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
+Group.router = EpidemicRouter
+#Group.router = SANERouter
+#Group.router = SEDUMRouter
+#Group.router = chitchat.ChitChatRouter
 
 Group.nrofHosts = {{num_hosts}}
 Scenario.endTime = {{duration}}
 
 Group.bufferSize = 500M
 # Message TTL of 300 minutes (5 hours)
-Group.msgTtl = 300
+Group.msgTtl = 1200
 
 
 Events.nrof = 1
@@ -19,6 +22,7 @@ Events1.centroidsFile = {{centroidFile}}
 Events1.hosts = 0,{{max_host_addr}}
 Events1.interval = {{message_freq}}
 Events1.size = 64k
+Events1.maxMetersBetweenNodes = 2000
 Events1.prefix = M
 
 # Externally created messages
@@ -66,7 +70,7 @@ Report.report1 = MessageStatsReport
 
 ## Scenario settings
 Scenario.simulateConnections = true
-Scenario.updateInterval = 20
+Scenario.updateInterval = 30
 
 
 ## Interface-specific settings:
@@ -80,7 +84,7 @@ Scenario.updateInterval = 20
 btInterface.type = SimpleBroadcastInterface
 # Transmit speed of 2 Mbps = 250kBps
 btInterface.transmitSpeed = 250k
-btInterface.transmitRange = 10
+btInterface.transmitRange = 500
 
 Scenario.nrofHostGroups = 1
 
