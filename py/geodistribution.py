@@ -39,13 +39,6 @@ def get_arguments():
   parser = argparse.ArgumentParser(
     description='Write out files for simulation.'
   )
-  parser.add_argument(
-    '-n', '--num-users',
-    dest='num_users',
-    help="Number of users to select from db",
-    type=int,
-    default=None,
-  )
 
   parser.add_argument(
     '-d', '--time-delta',
@@ -69,31 +62,21 @@ def get_arguments():
 import math
 def densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage, locations):
   # Sort nodes based on their distance to centroid.
-  print("Locations:")
-  print(locations)
   sorted_locations = sorted(locations, key=lambda r: r['distance'])
-  print("Sorted locations:")
-  print(sorted_locations)
 
   # Calculate how many nodes comprise of the percentage.
   n = int(math.ceil(percentage * len(sorted_locations)))
-  print("{0} of {1} is {2}".format(percentage, len(sorted_locations), n))
   
   # Find the node with the maximum distance in the sorted subset.
   sorted_subset = sorted_locations[:n]
-  print("Closest subset:")
-  print(sorted_subset)
   maximum_distance = sorted_subset[-1]['distance']
-  print("Maximum distance: {0}".format(maximum_distance))
 
   # Calculate the area of the circle.
   area = maximum_distance**2 * math.pi
-  print("Area of enclosing circle: {0}".format(area))
 
   # Divide area of circle by the number of nodes.
   density = area / n
-  print("Density: {0}".format(density))
-  return density
+  return density, maximum_distance, area
 
 
 def main():
@@ -107,17 +90,22 @@ def main():
   eta_til_completed = ETACalculator(n, "Geographic distribution over time")
 
   with open("density_stats.csv", 'w') as output_file:
-    fieldnames = ['time', 'density']
+    fieldnames = ['time', 'd10', 'd20', 'd40', 'd60', 'd80', 'd100', 'distance10', 'distance20', 'distance40', 'distance60', 'distance80', 'distance100', 'area10', 'area20', 'area40', 'area60', 'area80', 'area100', 'centroid_lat', 'centroid_lon']
     writer = csv.DictWriter(output_file, fieldnames=fieldnames)
     writer.writeheader()
 
     for t in timerange(time.min, time.max, delta):
+      location_info_for_current_time_period = []
       x_coords_of_records = []
       y_coords_of_records = []
       records = session.query(HomogenizedRecord).filter(
         HomogenizedRecord.time == t,
       )
       for r in records:
+        location_info_for_current_time_period.append({
+          'lat': r.latitude,
+          'lon': r.longitude,
+        })
         x_coords_of_records.append(r.longitude)
         y_coords_of_records.append(r.latitude)
 
@@ -127,23 +115,43 @@ def main():
       ))
 
       distances = []
-      for x, y in zip(x_coords_of_records, y_coords_of_records):
-        p = numpy.array((x,y))
-        d = numpy.linalg.norm(p-centroid)
-        distances.append(d)
+      for r in location_info_for_current_time_period:
+        p = numpy.array((r['lon'], r['lat']))
+        d = numpy.linalg.norm(p-centroid) * DECIMAL_DEGREES_TO_GRID_SCALE
+        r['distance'] = d
 
-      avg_distance = numpy.mean(distances)
-      std_distance = numpy.std(distances)
-      print("Centroid: {0}".format(centroid))
-      print("Average distance to centroid: {0}".format(avg_distance))
-      print("Stddev distance: {0}".format(std_distance))
+      locations = location_info_for_current_time_period
+      density10, md1, a1 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=0.1, locations=locations)
+      density20, md2, a2 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=0.2, locations=locations)
+      density40, md3, a3 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=0.4, locations=locations)
+      density60, md4, a4 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=0.6, locations=locations)
+      density80, md5, a5 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=0.8, locations=locations)
+      density100,md6, a6 = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage=1., locations=locations)
+
+      print("Densities: {0}, {1}, {2}, {3}, {4}, {5}".format(density10, density20, density40, density60, density80, density100))
 
       writer.writerow({
         "time": t,
-        "centroid_lat": centroid[1],
-        "centroid_long": centroid[0],
-        'avg_distance': avg_distance,
-        'std_distance': std_distance,
+        "d10": density10,
+        'distance10': md1,
+        'area10': a1,
+        'd20': density20,
+        'distance20': md2,
+        'area20': a2,
+        'd40': density40,
+        'distance40': md3,
+        'area40': a3,
+        'd60': density60,
+        'distance60': md4,
+        'area60': a4,
+        'd80': density80,
+        'distance80': md5,
+        'area80': a5,
+        'd100': density100,
+        'distance100': md6,
+        'area100': a6,
+        'centroid_lat': centroid[1],
+        'centroid_lon': centroid[0],
       })
 
       # Calculate the average x and y coordinate
@@ -151,12 +159,4 @@ def main():
       logger.info(eta_til_completed.eta())
 
 if __name__ == "__main__":
-  percentage = 0.8
-  locations = [
-    {'distance': 3},
-    {'distance': 8},
-    {'distance': 2},
-    {'distance': 1},
-    {'distance': 5},
-  ]
-  density = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage, locations)
+  main()
