@@ -66,7 +66,37 @@ def get_arguments():
   return args
 
 
-if __name__ == "__main__":
+import math
+def densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage, locations):
+  # Sort nodes based on their distance to centroid.
+  print("Locations:")
+  print(locations)
+  sorted_locations = sorted(locations, key=lambda r: r['distance'])
+  print("Sorted locations:")
+  print(sorted_locations)
+
+  # Calculate how many nodes comprise of the percentage.
+  n = int(math.ceil(percentage * len(sorted_locations)))
+  print("{0} of {1} is {2}".format(percentage, len(sorted_locations), n))
+  
+  # Find the node with the maximum distance in the sorted subset.
+  sorted_subset = sorted_locations[:n]
+  print("Closest subset:")
+  print(sorted_subset)
+  maximum_distance = sorted_subset[-1]['distance']
+  print("Maximum distance: {0}".format(maximum_distance))
+
+  # Calculate the area of the circle.
+  area = maximum_distance**2 * math.pi
+  print("Area of enclosing circle: {0}".format(area))
+
+  # Divide area of circle by the number of nodes.
+  density = area / n
+  print("Density: {0}".format(density))
+  return density
+
+
+def main():
   session = Session()
 
   args = get_arguments()
@@ -76,8 +106,8 @@ if __name__ == "__main__":
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
   eta_til_completed = ETACalculator(n, "Geographic distribution over time")
 
-  with open("distance_stats.csv", 'w') as output_file:
-    fieldnames = ['time', 'centroid_lat', 'centroid_long', 'avg_distance', 'std_distance']
+  with open("density_stats.csv", 'w') as output_file:
+    fieldnames = ['time', 'density']
     writer = csv.DictWriter(output_file, fieldnames=fieldnames)
     writer.writeheader()
 
@@ -120,3 +150,13 @@ if __name__ == "__main__":
       eta_til_completed.checkpoint()
       logger.info(eta_til_completed.eta())
 
+if __name__ == "__main__":
+  percentage = 0.8
+  locations = [
+    {'distance': 3},
+    {'distance': 8},
+    {'distance': 2},
+    {'distance': 1},
+    {'distance': 5},
+  ]
+  density = densityWithinCircleAroundCentroidContainingPercentageOfNodes(percentage, locations)
