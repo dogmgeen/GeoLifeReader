@@ -39,15 +39,6 @@ def get_arguments():
 
 
 def createCentroids(session):
-  logger.info("Creating index on raw record locations columns")
-  Index('raw_latitude', record.RawRecord.__table__.c.latitude).create(engine)
-  Index('raw_longitude', record.RawRecord.__table__.c.longitude).create(engine)
-  Index('raw_newnames', record.RawRecord.__table__.c.date_user_id).create(engine)
-
-  users = get_users(session)
-  logger.debug("#"*80)
-  logger.debug("Users selected: {0}".format(users))
-
   eta = ETACalculator(len(users), "User iteration")
 
   with open('centroids.csv', 'w') as csvfile:
