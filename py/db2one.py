@@ -137,7 +137,6 @@ if __name__ == "__main__":
   one_movement_filepath = prepare_output(args)
 
   logger.info("Exporting time-homogenized records from database")
-  logger.info("Number of users to be written out: {0}".format(num_users))
   logger.info("Output directory: {0}".format(output_directory))
   logger.info("Time delta between records: {0}".format(delta))
   logger.info("Written movement file: {0}".format(one_movement_filepath))
@@ -152,8 +151,7 @@ if __name__ == "__main__":
   else:
     num_users = len(users)
 
-  logger.info("Users selected: {0}".format(users))
-
+  logger.info("Number of users to be written out: {0}".format(num_users))
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
   eta_til_completed = ETACalculator(n, "DB to ONE output")
   converter = ExternalMovementReaderConverter(
