@@ -1,9 +1,9 @@
 ##############################################################################
 # Customize based on GeoLife dataset size
-Scenario.name = geolife-%%Group.router%%-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
+Scenario.name = geolife-%%Group.router%%-%%btInterface.transmitRange%%mRadius-%%Events1.maxMetersBetweenNodes%%mMessageProximity-%%Group.nrofHosts%%users-%%Group.bufferSize%%buffer-%%Group.msgTtl%%minTTL-%%Events1.interval%%msgInterval
 Group.router = EpidemicRouter
 
-Group.nrofHosts = 1312
+Group.nrofHosts = 2000
 Scenario.endTime = 86399
 
 Group.bufferSize = 500M
@@ -14,45 +14,46 @@ Group.msgTtl = 300
 Events.nrof = 1
 
 # Randomly created messages.
-Events1.class = MessageEventGenerator
-Events1.hosts = 0,1311
-Events1.interval = 25
+Events1.class = ProximityMessageEventGenerator
+Events1.centroidsFile = /home/djmvfb/GeoLifeReader/py/out/centroids.csv
+Events1.maxMetersBetweenNodes = 2000
+Events1.hosts = 0,1999
+Events1.interval = 10
 Events1.size = 64k
 Events1.prefix = M
 
 # Externally created messages
 ##Events1.class = ExternalEventsQueue
-##Events1.filePath = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/msgs.csv
+##Events1.filePath = 
 
 
 # External Movement model, defining movement based on GPS log. 
 Group.movementModel = ExternalMovement
-MovementModel.worldSize = 16199, 14399
-ExternalMovement.file = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/0.plt
+MovementModel.worldSize = 117900, 124199
+ExternalMovement.file = /home/djmvfb/GeoLifeReader/py/out/0.plt
 
 
-SANERouter.interestSpace = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interestSpace.csv
-SANERouter.interests = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interests.csv
+SANERouter.socialInterestSpaceDimensions = 200
+SANERouter.socialInterestsPerRouter = 25
 SANERouter.relayThreshold = 0.25
 SANERouter.replicas = 4
 
 
-ChitChatRouter.interests = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/interests.csv
-ChitChatRouter.SocialPatternDecay.class = LogisticDecay
-ChitChatRouter.SocialPatternDecay.beta = 3.0
-ChitChatRouter.SocialPatternDecay.sigma = 10
+ChitChatRouter.SocialPatternDecay.class = LinearDecay
+ChitChatRouter.SocialPatternDecay.secondsToZero = 300
+ChitChatRouter.socialInterestSpaceDimensions = 200
+ChitChatRouter.socialInterestsPerRouter = 25
+
 # If the message metadata file is not specified, then the message metadata is
 #   defaulted to the interests of the destination.
-##ChitChatRouter.messageMetadataFile = /home/djmvfb/GeoLifeReader/py/out/Tuesday/1312/metadata.csv
+##ChitChatRouter.messageMetadataFile = 
 
 
-Report.nrofReports = 3
+Report.nrofReports = 1 
 # length of the warm up period (simulated seconds)
 Report.warmup = 0
-Report.reportDir = reports/
+Report.reportDir = /home/djmvfb/GeoLifeReader/py/out/ 
 Report.report1 = MessageStatsReport
-Report.report2 = BetterMessageReport
-Report.report3 = AdjacencyGraphvizReport
 
 
 #
@@ -66,7 +67,7 @@ Report.report3 = AdjacencyGraphvizReport
 
 ## Scenario settings
 Scenario.simulateConnections = true
-Scenario.updateInterval = 20
+Scenario.updateInterval = 5
 
 
 ## Interface-specific settings:
@@ -80,7 +81,7 @@ Scenario.updateInterval = 20
 btInterface.type = SimpleBroadcastInterface
 # Transmit speed of 2 Mbps = 250kBps
 btInterface.transmitSpeed = 250k
-btInterface.transmitRange = 10
+btInterface.transmitRange = 500
 
 Scenario.nrofHostGroups = 1
 
@@ -100,7 +101,7 @@ SprayAndWaitRouter.binaryMode = true
 
 ## Optimization settings -- these affect the speed of the simulation
 ## see World class for details.
-Optimization.cellSizeMult = 1
+Optimization.cellSizeMult = 4
 Optimization.randomizeUpdateOrder = true
 
 # how many events to show in the log panel (default = 30)
