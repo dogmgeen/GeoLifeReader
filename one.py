@@ -23,7 +23,7 @@ class ExternalMovementReaderConverter:
     self.user_to_addr_map = {}
     i = 0
     for u in users:
-      self.user_to_addr_map[long(u)] = i
+      self.user_to_addr_map[int(u)] = i
       i += 1
 
   def __call__(self, record):
