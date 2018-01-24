@@ -17,7 +17,6 @@ from datetime import date
 from datetime import datetime
 from utils import timerange
 from utils import timeAdd
-from utils import ETACalculator
 from utils import timeDifferenceSeconds
 from utils import num_elements_in_time_range
 from schema import HomogenizedRecord
@@ -51,23 +50,22 @@ class RecentUserRecord:
 
     logger.info("Preloading RecentUserRecord object")
     records = s.query(RecordsOnOneDay).order_by(RecordsOnOneDay.c.timestamp)
-    eta = ETACalculator(len(users), name="Earliest User Records")
 
-    for u in users:
-      r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
+    with progressbar.ProgressBar(max_value=len(users)) as progress:
+        for i, u in enumerate(users):
+            r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
 
-      # If this node has no activity within the bounds, skip them.
-      if r is None:
-        continue
+            # If this node has no activity within the bounds, skip them.
+            if r is None:
+              continue
 
-      mutable_record = FakeHomogenizedRecord(
-        u=r.new_user_id, t=r.timestamp, lat=r.lat, lon=r.long
-      )
-      self.most_recent_record[u] = mutable_record
+            mutable_record = FakeHomogenizedRecord(
+              u=r.new_user_id, t=r.timestamp, lat=r.lat, lon=r.long
+            )
+            self.most_recent_record[u] = mutable_record
 
-      logger.info("First record for user {0}: {1}".format(u, r))
-      eta.checkpoint()
-      logger.info(eta.eta())
+            logger.info("First record for user {0}: {1}".format(u, r))
+            progress.update(i)
 
     s.close()
 
@@ -134,27 +132,27 @@ def verify_time_homogeniety(users, time_delta, db_session):
   logger.info("Verifying time homogeneity between {0} users".format(
     len(users)
   ))
-  eta = ETACalculator(len(users), "Time Homogeneity Verification")
-  for u in users:
-    result_set = db_session.query(HomogenizedRecord.time)\
-                           .filter(HomogenizedRecord.user == u)\
-                           .order_by(HomogenizedRecord.time)
-    previous = None
-    i = 0
-    for r, in result_set:
-      if previous is not None:
-        diff = timeDifferenceSeconds(r, previous)
-        assert diff == time_delta.total_seconds(), (
-          "Time homogeniety was not preserved for user {user}, record #{record}.\n"
-          "Expected time delta: {exp}\n"
-          "Actual time delta:   {act}".format(
-            user=u, record=i, exp=time_delta, act=diff
-        ))
+  with progressbar.ProgressBar(max_value=len(users)) as progress:
+      for index, u in enumerate(users):
+          result_set = db_session.query(HomogenizedRecord.time)\
+                                 .filter(HomogenizedRecord.user == u)\
+                                 .order_by(HomogenizedRecord.time)
+          previous = None
+          i = 0
+          for r, in result_set:
+            if previous is not None:
+              diff = timeDifferenceSeconds(r, previous)
+              assert diff == time_delta.total_seconds(), (
+                "Time homogeniety was not preserved for user {user}, record #{record}.\n"
+                "Expected time delta: {exp}\n"
+                "Actual time delta:   {act}".format(
+                  user=u, record=i, exp=time_delta, act=diff
+              ))
 
-      previous = r
-      i += 1
-    eta.checkpoint()
-    logger.info(eta.eta())
+            previous = r
+            i += 1
+
+          progress.update(index)
 
 
 if __name__ == "__main__":
