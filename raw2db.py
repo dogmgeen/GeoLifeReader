@@ -1,4 +1,8 @@
 import logging
+
+import progressbar
+progressbar.streams.wrap_stderr()
+
 logging.basicConfig(
   level=logging.DEBUG,
   filename='/tmp/geolife.log',
@@ -17,8 +21,6 @@ from sqlalchemy import Index
 from sqlalchemy.sql import func
 from raw import record
 from raw import user
-from utils import ETACalculator
-from collections import defaultdict
 import config
 from datetime import date
 from datetime import datetime
@@ -60,23 +62,25 @@ if __name__ == "__main__":
   record.initialize_table(engine)
   logger.info("Table initialized")
 
-  """
-  timer = ETACalculator(iterations=geolife.get_num_files(directory))
-  for u in user.from_directory(directory):
 
-    logger.info("Beginning yielding of records from user {0.id}".format(u))
-    for f in u.files:
-      session.add_all(f)
-      session.commit()
+  with progressbar.ProgressBar(max_value=geolife.get_num_files(directory)) as\
+          progress:
+      current_file_index = 1
+      for u in user.from_directory(directory):
 
-      timer.checkpoint()
-      logger.info("="*60)
-      logger.info("File {0}".format(os.path.basename(f.url)))
-      logger.info(timer.eta())
-      u.num_records += f.num_records
+        logger.info("Beginning yielding of records from user {0.id}".format(u))
+        for f in u.files:
+          session.add_all(f)
+          session.commit()
 
-    session.add(u.to_DB())
-    session.commit()
+          progress.update(current_file_index)
+          current_file_index += 1
+
+          logger.info("File {0}".format(os.path.basename(f.url)))
+          u.num_records += f.num_records
+
+        session.add(u.to_DB())
+        session.commit()
 
   # Create an index on the time values
   logger.info("Creating index on raw record time columns")
@@ -84,26 +88,26 @@ if __name__ == "__main__":
   Index('raw_latitude', record.RawRecord.__table__.c.latitude).create(engine)
   Index('raw_longitude', record.RawRecord.__table__.c.longitude).create(engine)
   Index('raw_newnames', record.RawRecord.__table__.c.date_user_id).create(engine)
-  """
-  #engine.execute("""
-  #  CREATE VIEW day_records_view 
-  #  AS SELECT
-  #    latitude as lat,
-  #    longitude as long,
-  #    time as timestamp,
-  #    "user" as old_user_id,
-  #    date_user_id as new_user_id
-  #    from raw_records
-  #    WHERE latitude > {0}
-  #    AND latitude < {1}
-  #    AND longitude > {2}
-  #    AND longitude < {3};
-  #""".format(
-  #  config.BOUNDS['south'],
-  #  config.BOUNDS['north'],
-  #  config.BOUNDS['west'],
-  #  config.BOUNDS['east'],
-  #))
+
+  engine.execute("""
+   CREATE VIEW day_records_view 
+   AS SELECT
+     latitude as lat,
+     longitude as long,
+     time as timestamp,
+     "user" as old_user_id,
+     date_user_id as new_user_id
+     from raw_records
+     WHERE latitude > {0}
+     AND latitude < {1}
+     AND longitude > {2}
+     AND longitude < {3};
+  """.format(
+   config.BOUNDS['south'],
+   config.BOUNDS['north'],
+   config.BOUNDS['west'],
+   config.BOUNDS['east'],
+  ))
   
 
   from schema import RecordsOnOneDay
@@ -111,48 +115,48 @@ if __name__ == "__main__":
   logger.info("Preloading RecentUserRecord object")
   users = get_users(session)
   records = session.query(RecordsOnOneDay).order_by(RecordsOnOneDay.c.timestamp)
-  eta = ETACalculator(len(users), name="Earliest User Records")
+
   date_dummy = date.today()
-
   dayusers = []
-  for u in users:
-      logger.info("Calculating the user's centroid of movement")
-      centroid_of_movement = session.query(
-        func.avg(RecordsOnOneDay.c.lat).label('lat'),
-        func.avg(RecordsOnOneDay.c.long).label('long'),
-      ).filter(RecordsOnOneDay.c.new_user_id==u).first()
 
-      count = records.filter(RecordsOnOneDay.c.new_user_id == u).count()
-      r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
-      last = session.query(RecordsOnOneDay).filter(
-        RecordsOnOneDay.c.new_user_id == u
-      ).order_by(
-        RecordsOnOneDay.c.timestamp.desc()
-      ).first()
+  with progressbar.ProgressBar(max_value=len(users)) as progress:
+      for i, u in enumerate(users):
+          logger.info("Calculating the user's centroid of movement")
+          centroid_of_movement = session.query(
+            func.avg(RecordsOnOneDay.c.lat).label('lat'),
+            func.avg(RecordsOnOneDay.c.long).label('long'),
+          ).filter(RecordsOnOneDay.c.new_user_id==u).first()
+
+          count = records.filter(RecordsOnOneDay.c.new_user_id == u).count()
+          r = records.filter(RecordsOnOneDay.c.new_user_id == u).first()
+          last = session.query(RecordsOnOneDay).filter(
+            RecordsOnOneDay.c.new_user_id == u
+          ).order_by(
+            RecordsOnOneDay.c.timestamp.desc()
+          ).first()
 
 
-      # If this node has no activity within the bounds, skip them.
-      if r is None:
-        continue
+          # If this node has no activity within the bounds, skip them.
+          if r is None:
+            continue
 
-      latest_timestamp = datetime.combine(date_dummy, last.timestamp)
-      earliest_timestamp = datetime.combine(date_dummy, r.timestamp)
-      duration_seconds = latest_timestamp - earliest_timestamp
+          latest_timestamp = datetime.combine(date_dummy, last.timestamp)
+          earliest_timestamp = datetime.combine(date_dummy, r.timestamp)
+          duration_seconds = latest_timestamp - earliest_timestamp
 
-      #dayusers.append(
-      session.add(
-        record.DayUser(
-        id=u, count=count,
-        earliest_record_time=r.timestamp,
-        latest_record_time=last.timestamp,
-        duration=(duration_seconds).total_seconds(),
-        centroid_lat=centroid_of_movement.lat,
-        centroid_lon=centroid_of_movement.long,
-      ))
+          #dayusers.append(
+          session.add(
+            record.DayUser(
+            id=u, count=count,
+            earliest_record_time=r.timestamp,
+            latest_record_time=last.timestamp,
+            duration=(duration_seconds).total_seconds(),
+            centroid_lat=centroid_of_movement.lat,
+            centroid_lon=centroid_of_movement.long,
+          ))
 
-      logger.info("First record for user {0}: {1}".format(u, r))
-      eta.checkpoint()
-      logger.info(eta.eta())
+          logger.info("First record for user {0}: {1}".format(u, r))
+          progress.update(i)
 
   #session.add_all(dayusers)
   session.commit()

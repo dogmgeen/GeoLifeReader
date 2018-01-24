@@ -1,10 +1,10 @@
 import logging
 logger = logging.getLogger("geolife.user")
 import os
-import pltfile
+from raw import pltfile
 from collections import defaultdict
-from record import RawRecord
-from record import GeoLifeUser
+from raw.record import RawRecord
+from raw.record import GeoLifeUser
 from utils import datetimerange
 from sqlalchemy import update
 

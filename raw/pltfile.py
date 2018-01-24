@@ -4,7 +4,7 @@ import os
 import csv
 from utils import timestamp2datetime
 from utils import convertToBeijingTime
-from record import RawRecord
+from raw.record import RawRecord
 from datetime import datetime
 
 SCHEMA = ["lat", "long", "not_needed", "alt", "days_since_1900", "date", "time"]
@@ -55,7 +55,7 @@ class GeoLifeFile:
             longitude=entry["long"],
             time=d.time(),
             date=d.date(),
-            date_user_id=long("{0}{1}".format(
+            date_user_id=int("{0}{1}".format(
               d.strftime("%Y%m%d"), self.user
             ))
         )

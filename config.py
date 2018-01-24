@@ -24,7 +24,7 @@ BEIJING_80 = {
 
 BOUNDS = BEIJING
 
-TRACE_DESTINATION_DIRECTORY = "/home/djmvfb/one"
+TRACE_DESTINATION_DIRECTORY = "/media/kp/EC.edu/Research/GeoLife/one"
 TRACE_FILENAME_FORMAT = "geolife2one_{0}_{1}users.csv"
 DELTA = timedelta(seconds=5)
 NUM_MESSAGES = 5000
@@ -37,7 +37,7 @@ def getEngine():
   return create_engine(
     "{dialect}://{username}:{password}@{host}/{database}".format(
     dialect='postgresql+psycopg2',
-    username='postgres',
+    username='geolife',
     password='nope',
     host='localhost',
     database='geolife'

@@ -1,4 +1,8 @@
 import logging
+
+import progressbar
+progressbar.streams.wrap_stderr()
+
 logging.basicConfig(level=logging.DEBUG, filename='/tmp/geolife.timehomo.log')
 logger = logging.getLogger("geolife")
 stdout = logging.StreamHandler()
@@ -176,57 +180,56 @@ if __name__ == "__main__":
   homogenized_records = []
 
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
-  eta_til_completed_day = ETACalculator(n, "Synthesis")
+  with progressbar.ProgressBar(max_val=n) as progress:
 
-  for t in timerange(time.min, time.max, delta):
-      logger.debug("="*60)
-      logger.debug("Querying for time {0}".format(t))
-      record_set = session.query(RecordsOnOneDay).filter(
-        RecordsOnOneDay.c.timestamp >= t,
-        RecordsOnOneDay.c.timestamp < timeAdd(t, delta),
-        RecordsOnOneDay.c.new_user_id.in_(users)
-      ).order_by(RecordsOnOneDay.c.timestamp).all()
-      
-      i = 0
-      for r in record_set:
-        if r.new_user_id not in users_present:
-          #logger.debug("-"*40)
-          #logger.debug("Record from DB: {0}".format(r))
-          users_present.add(r.new_user_id)
-          mutable_record = FakeHomogenizedRecord(
-            u=r.new_user_id, t=t, lat=r.lat, lon=r.long
-          )
-          homogenized_records.append(mutable_record)
-          most_recent_records.update(r.new_user_id, mutable_record)
-          i += 1
-      logger.debug("{0} records on {1}".format(i, t))
+    for index, t in enumerate(timerange(time.min, time.max, delta)):
+        logger.debug("="*60)
+        logger.debug("Querying for time {0}".format(t))
+        record_set = session.query(RecordsOnOneDay).filter(
+          RecordsOnOneDay.c.timestamp >= t,
+          RecordsOnOneDay.c.timestamp < timeAdd(t, delta),
+          RecordsOnOneDay.c.new_user_id.in_(users)
+        ).order_by(RecordsOnOneDay.c.timestamp).all()
 
-      users_not_present = users - users_present
-      logger.debug("Users not present: {0}".format(len(users_not_present)))
-      for u in users_not_present:
-        #logger.debug("+"*40)
-        most_recent_record = most_recent_records.get(t, u)
-        most_recent_record.timestamp = t
-        homogenized_records.append(most_recent_record)
+        i = 0
+        for r in record_set:
+          if r.new_user_id not in users_present:
+            #logger.debug("-"*40)
+            #logger.debug("Record from DB: {0}".format(r))
+            users_present.add(r.new_user_id)
+            mutable_record = FakeHomogenizedRecord(
+              u=r.new_user_id, t=t, lat=r.lat, lon=r.long
+            )
+            homogenized_records.append(mutable_record)
+            most_recent_records.update(r.new_user_id, mutable_record)
+            i += 1
+        logger.debug("{0} records on {1}".format(i, t))
 
-      logger.info("Adding {0} homogenized records to database".format(
-        len(homogenized_records)
-      ))
-      if not dry_run:
-        session.add_all([HomogenizedRecord(
-            user=r.new_user_id, latitude=r.lat, longitude=r.long,
-            time=r.timestamp,
-          ) for r in homogenized_records
-        ])
-        session.commit()
+        users_not_present = users - users_present
+        logger.debug("Users not present: {0}".format(len(users_not_present)))
+        for u in users_not_present:
+          #logger.debug("+"*40)
+          most_recent_record = most_recent_records.get(t, u)
+          most_recent_record.timestamp = t
+          homogenized_records.append(most_recent_record)
 
-      users_present.clear()
+        logger.info("Adding {0} homogenized records to database".format(
+          len(homogenized_records)
+        ))
+        if not dry_run:
+          session.add_all([HomogenizedRecord(
+              user=r.new_user_id, latitude=r.lat, longitude=r.long,
+              time=r.timestamp,
+            ) for r in homogenized_records
+          ])
+          session.commit()
 
-      assert len(homogenized_records) == len(users), "Number of homogenized records {0} is not equal to the number of users {1}".format(len(homogenized_records), len(users))
-      del homogenized_records[:]
+        users_present.clear()
 
-      eta_til_completed_day.checkpoint()
-      logger.info(eta_til_completed_day.eta())
+        assert len(homogenized_records) == len(users), "Number of homogenized records {0} is not equal to the number of users {1}".format(len(homogenized_records), len(users))
+        del homogenized_records[:]
+
+        progress.update(index)
 
   # Create the indices needed for fast performance!
   logger.info("Creating index on raw record time columns")
