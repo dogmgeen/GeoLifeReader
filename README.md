@@ -52,6 +52,7 @@ Parameters:
 * Area of interest.
 * Time delta between records.
 
+
     users = get_user_subset(n, weekday)
     for t in range(start, end+delta, delta):
         records = SELECT * FROM time_homogenized_records
