@@ -178,7 +178,8 @@ if __name__ == "__main__":
   homogenized_records = []
 
   n = num_elements_in_time_range(start=time.min, end=time.max, step=delta)
-  with progressbar.ProgressBar(max_val=n) as progress:
+  logger.info('Walking through {} time units'.format(n))
+  with progressbar.ProgressBar(max_value=n) as progress:
 
     for index, t in enumerate(timerange(time.min, time.max, delta)):
         logger.debug("="*60)
