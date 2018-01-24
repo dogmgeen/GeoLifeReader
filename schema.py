@@ -7,9 +7,7 @@ from sqlalchemy import Integer
 from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Time
-from sqlalchemy import SmallInteger
 from sqlalchemy import Table
-import random
 
 
 from sqlalchemy import MetaData
