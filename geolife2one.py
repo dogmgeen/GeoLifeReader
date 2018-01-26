@@ -20,14 +20,16 @@ ARGUMENTS
 
 AUTHOR
 
-	Doug McGeehan
+	Doug McGeehan <doug.mcgeehan@mst.edu>
 
 
 LICENSE
 
-	Copyright 2018 Doug McGeehan - GNU GPLv3
+	Copyright 2015-2018 Doug McGeehan - GNU GPLv3
 
 """
+
+import geolife2one.download
 
 __appname__ = "geolife2one"
 __author__ = "Doug McGeehan"
@@ -85,7 +87,7 @@ def setup_logger(args):
 
     # create formatter and add it to the handlers
     line_numbers_and_function_name = logging.Formatter(
-        "%(levelname)s [ %(pathname)s::%(funcName)s():%(lineno)s ]"
+        "%(levelname)s [ %(pathname)s::%(funcName)s():%(lineno)s ] "
         "%(message)s")
     fh.setFormatter(line_numbers_and_function_name)
     ch.setFormatter(line_numbers_and_function_name)
@@ -121,10 +123,7 @@ def get_arguments():
              'downloaded (default: ./downloads).'
     )
 
-    def g(args):
-        print(args.output_directory)
-
-    geolife_downloader.set_defaults(func=g)
+    geolife_downloader.set_defaults(func=geolife2one.download.main)
 
     # Initialize the database into which the GeoLife dataset will be loaded
     db_initializer = subparsers.add_parser(
