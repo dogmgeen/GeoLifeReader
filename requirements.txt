@@ -3,3 +3,6 @@ progressbar2
 pystache
 sqlalchemy
 pytz
+tqdm
+requests
+humanfriendly
