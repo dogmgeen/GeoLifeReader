@@ -10,6 +10,7 @@ import os
 import requests
 import urllib.parse
 import subprocess
+import zipfile
 
 GEOLIFE_DOWNLOAD_URL = 'https://download.microsoft.com/download/F/4/8/F4894AA5-FDBC-481E-9285-D5F8C4C4F039/Geolife%20Trajectories%201.3.zip'
 DOWNLOAD_CHUNK_SIZE = (1024*1024)
@@ -33,7 +34,7 @@ def download_with_progress(path):
     ))
 
     with open(path, 'wb') as f:
-        for data in tqdm(r.iter_content(chunk_size=(1024 * 1024)),
+        for data in tqdm(r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE),
                          total=size / DOWNLOAD_CHUNK_SIZE, unit='MB',
                          unit_scale=True):
             f.write(data)
@@ -57,26 +58,51 @@ def main(args):
     if os.path.isfile(download_to_path):
         import sys
         logger.warning('GeoLife archive already exists at "{}"! '
-                       'Aborting.'.format(download_to_path))
-        sys.exit(1)
+                       'Aborting download.'.format(download_to_path))
 
-    # Download the GeoLife dataset file and create a progress bar to plot the
-    #  download's progress.
-    logger.debug('Output file will be located at "{}"'.format(
-        download_to_path
-    ))
+    else:
+        # Download the GeoLife dataset file and create a progress bar to plot the
+        #  download's progress.
+        logger.debug('Output file will be located at "{}"'.format(
+            download_to_path
+        ))
 
+        try:
+            subprocess.call([
+                'wget',
+                '--directory-prefix={}'.format(args.output_directory),
+                GEOLIFE_DOWNLOAD_URL
+            ])
+        except FileNotFoundError:
+            # User might be on Windows.
+            download_with_progress(path=download_to_path)
+
+        logger.debug('Download complete!')
+
+    # Unzip the archive in the given directory.
+    if os.path.isdir(os.path.join(args.output_directory,
+                                  'Geolife Trajectories 1.3')):
+        # ZIP archive has already been unzipped.
+        # Skip unzipping.
+        logger.warning('ZIP archive has already been unzipped. Skip unzipping.')
+
+    else:
+        logger.debug('Unzipping GeoLife ZIP archive into {}'.format(
+            args.output_directory
+        ))
+        unzip(download_to_path)
+
+
+def unzip(path):
     try:
-        subprocess.call([
-            'wget',
-            '--directory-prefix={}'.format(args.output_directory),
-            GEOLIFE_DOWNLOAD_URL
-        ])
-    except FileNotFoundError:
-        # User might be on Windows.
-        download_with_progress(path=download_to_path)
-
-    logger.debug('Download complete!')
+        subprocess.Popen(['unzip', path], cwd=os.path.dirname(path))
+    except:
+        # Use the pure Python method of unzipping. No progress / feedback
+        # though.
+        logger.debug('This may take some time. Go get some coffee.')
+        zip_ref = zipfile.ZipFile(path, 'r')
+        zip_ref.extractall('/tmp/geolife/') #os.path.dirname(path))
+        zip_ref.close()
 
 
 if __name__ == '__main__':
