@@ -66,13 +66,15 @@ def main(args):
         download_to_path
     ))
 
-    # download_with_progress(path=download_to_path)
-
-    subprocess.call([
-        'wget',
-        '--directory-prefix={}'.format(args.output_directory),
-        GEOLIFE_DOWNLOAD_URL
-    ])
+    try:
+        subprocess.call([
+            'wget',
+            '--directory-prefix={}'.format(args.output_directory),
+            GEOLIFE_DOWNLOAD_URL
+        ])
+    except FileNotFoundError:
+        # User might be on Windows.
+        download_with_progress(path=download_to_path)
 
     logger.debug('Download complete!')
 
